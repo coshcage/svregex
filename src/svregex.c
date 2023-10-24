@@ -884,7 +884,7 @@ size_t NextState(P_DFA dfa, size_t s, wchar_t a)
 	if (NULL != dfa && s > 0 && s < dfa->ln)
 	{
 		size_t i = a;
-		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata + 1, dfa->col + 1, sizeof(size_t), _grpCBFCompareInteger);
+		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata, dfa->col, sizeof(size_t), _grpCBFCompareInteger);
 		if (NULL != r)
 			return *(size_t *)strGetValueMatrix(NULL, dfa, s, (size_t)(r - (size_t *)dfa->arrz.pdata), sizeof(size_t));
 	}
