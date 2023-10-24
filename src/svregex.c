@@ -2,16 +2,16 @@
   * Name:        svregex.c
   * Description: SV Regular Expression.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1024231324L00909
+  * File ID:     1022231324A1024232001L00933
   * License:     GPLv2.
   */
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include "svregex.h"
-#include "svstack.h"
-#include "svqueue.h"
-#include "svtree.h"
-#include "svset.h"
+#include "StoneValley/src/svstack.h"
+#include "StoneValley/src/svqueue.h"
+#include "StoneValley/src/svtree.h"
+#include "StoneValley/src/svset.h"
 
 typedef enum en_Terminator
 {
@@ -730,6 +730,26 @@ void DestroyDstates(P_SET_T pds)
 	setDeleteT(pds);
 }
 
+int cbftvsPrintDstates(void * pitem, size_t param)
+{
+	P_DSTATES pd;
+	pd = (P_DSTATES)P2P_TNODE_BY(pitem)->pdata;
+	if (pd->pset)
+	{
+		printf("{ ");
+		setTraverseT(pd->pset, cbftvsPrintSet, 0, ETM_INORDER);
+		printf(" }, ");
+	}
+	return CBF_CONTINUE;
+}
+
+void PrintDstates(P_SET_T pset)
+{
+	printf("DSTATES:{ ");
+	setTraverseT(pset, cbftvsPrintDstates, 0, ETM_INORDER);
+	printf(" }\n");
+}
+
 P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_BY proot, size_t iend)
 {
 	P_MATRIX dfa = NULL;
@@ -808,10 +828,16 @@ P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_BY proot
 			a[1] = pd->label;
 			a[2] = FALSE;
 
-			setTraverseT(psetDstates, cbftvsCmpTwoSets, (size_t)a, ETM_LEVELORDER);
+#ifdef DEBUG
+			PrintDstates(psetDstates);
+#endif
+			if (NULL != u1)
+				setTraverseT(psetDstates, cbftvsCmpTwoSets, (size_t)a, ETM_LEVELORDER);
+			else
+				a[2] = TRUE;
 			if (FALSE == a[2])
 			{
-				d.pset = setCopyT(u1, sizeof(size_t));
+				d.pset = setIsEmptyT(u1) ? setCreateT() : setCopyT(u1, sizeof(size_t));
 				d.mark = FALSE;
 				d.label = m;
 				++m;
@@ -836,7 +862,11 @@ P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_BY proot
 			printf("\n");
 			PrintDFA(dfa);
 #endif
-			setDeleteT(u1);
+			if (NULL != u1)
+			{
+				setDeleteT(u1);
+				u1 = NULL;
+			}
 			u2 = setCreateT();
 		}
 		setDeleteT(u2);
