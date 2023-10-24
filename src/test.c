@@ -1,8 +1,16 @@
+/*
+ * Name:        test.c
+ * Description: SV Regular Expression launcher.
+ * Author:      cosh.cage#hotmail.com
+ * File ID:     1024231324C1024231324L00043
+ * License:     GPLv2.
+ */
 #define _CRT_SECURE_NO_WARNINGS 1
 #include <stdio.h>
 #include <wchar.h>
 #include "svregex.h"
 
+void PrintDFA(P_DFA dfa);
 
 int main(int argc, char ** argv)
 {
@@ -12,6 +20,8 @@ int main(int argc, char ** argv)
 	wchar_t * p = pattern;
 
 	P_DFA dfa = CompileRegex2DFA(&p);
+
+	PrintDFA(dfa);
 
 	(void)wscanf(L"%ls", wcs);
 	wprintf(L"%ls\n", wcs);
@@ -23,7 +33,7 @@ int main(int argc, char ** argv)
 		strGetValueMatrix(&l, dfa, j, 0, sizeof(size_t));
 		if (l & SIGN)
 		{
-			printf("Match!");
+			printf("Match!\n");
 			break;
 		}
 	}

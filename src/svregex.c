@@ -1,13 +1,12 @@
-/* Name: regex2dfa
- * Compile this file with StoneValley.
- * License: GPLv2.
- * Author: cosh.cage at hotmail.com
- * 10/22/23
- */
+ /*
+  * Name:        svregex.c
+  * Description: SV Regular Expression.
+  * Author:      cosh.cage#hotmail.com
+  * File ID:     1022231324A1024231324L00909
+  * License:     GPLv2.
+  */
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
-#include <wchar.h>
-#include <limits.h>
 #include "svregex.h"
 #include "svstack.h"
 #include "svqueue.h"
@@ -696,7 +695,7 @@ int cbftvsCmpTwoSets(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-void PrintDFA(P_MATRIX pmtx)
+void PrintDFA(P_DFA pmtx)
 {
 	size_t i, j, k;
 	for (j = 0; j < pmtx->col; ++j)

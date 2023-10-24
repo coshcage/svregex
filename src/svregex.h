@@ -1,6 +1,15 @@
+/*
+ * Name:        svregex.h
+ * Description: SV Regular Expression Interface.
+ * Author:      cosh.cage#hotmail.com
+ * File ID:     1024231324B1024231324L00024
+ * License:     GPLv2.
+ */
 #ifndef _SVREGEX_H_
 #define _SVREGEX_H_
 
+#include <wchar.h>
+#include <limits.h>
 #include "svstring.h"
 typedef P_MATRIX P_DFA;
 
