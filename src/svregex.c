@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1024232001L00933
+  * File ID:     1022231324A1024232015L00934
   * License:     GPLv2.
   */
 #define _CRT_SECURE_NO_WARNINGS
@@ -698,8 +698,9 @@ int cbftvsCmpTwoSets(void * pitem, size_t param)
 void PrintDFA(P_DFA pmtx)
 {
 	size_t i, j, k;
-	for (j = 0; j < pmtx->col; ++j)
-		printf("%ld\t", *(size_t *)strGetValueMatrix(NULL, pmtx, 0, j, sizeof(size_t)));
+	printf("0\t");
+	for (j = 1; j < pmtx->col; ++j)
+		wprintf(L"%\'%c\'\t", (wchar_t)*(size_t *)strGetValueMatrix(NULL, pmtx, 0, j, sizeof(size_t)));
 	printf("\n");
 	for (i = 1; i < pmtx->ln; ++i)
 	{
@@ -883,7 +884,7 @@ size_t NextState(P_DFA dfa, size_t s, wchar_t a)
 	if (NULL != dfa && s > 0 && s < dfa->ln)
 	{
 		size_t i = a;
-		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata + 1, dfa->col, sizeof(size_t), _grpCBFCompareInteger);
+		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata + 1, dfa->col + 1, sizeof(size_t), _grpCBFCompareInteger);
 		if (NULL != r)
 			return *(size_t *)strGetValueMatrix(NULL, dfa, s, (size_t)(r - (size_t *)dfa->arrz.pdata), sizeof(size_t));
 	}
