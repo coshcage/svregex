@@ -46,6 +46,21 @@ typedef struct st_LVFNDTBL
 	size_t  i;
 } LVFNDTBL, * P_LVFNDTBL;
 
+typedef enum en_GROUPSTATE
+{
+	EGS_NORMAL,
+	EGS_START,
+	EGS_END
+} GROUPSTATE;
+
+typedef struct st_STATEGROUP
+{
+	P_SET_T    pset;
+	size_t     rep;
+	BOOL       bsplit;
+	GROUPSTATE egs;
+} STATEGROUP, * P_STATEGROUP;
+
 STACK_L stkOperand;
 STACK_L stkOperator;
 
@@ -879,6 +894,16 @@ P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_BY proot
 	return dfa;
 }
 
+int _cbfcmpSize_t(const void * px, const void * py)
+{
+	size_t x, y;
+	x = *(size_t *)px;
+	y = *(size_t *)py;
+	x &= (~SIGN);
+	y &= (~SIGN);
+	return _grpCBFCompareInteger(&x, &y);
+}
+
 size_t NextState(P_DFA dfa, size_t s, wchar_t a)
 {
 	if (NULL != dfa && s > 0 && s < dfa->ln)
@@ -887,6 +912,22 @@ size_t NextState(P_DFA dfa, size_t s, wchar_t a)
 		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata, dfa->col, sizeof(size_t), _grpCBFCompareInteger);
 		if (NULL != r)
 			return *(size_t *)strGetValueMatrix(NULL, dfa, s, (size_t)(r - (size_t *)dfa->arrz.pdata), sizeof(size_t));
+	}
+	return 0;
+}
+
+size_t NextStateM(P_DFA dfa, size_t s, wchar_t a)
+{
+	if (NULL != dfa && s > 0 && s < dfa->ln)
+	{
+		size_t i = a;
+		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata, dfa->col, sizeof(size_t), _grpCBFCompareInteger);
+		if (NULL != r)
+		{
+			size_t j, k = (size_t)(r - (size_t *)dfa->arrz.pdata);
+			j = *(size_t *)svBinarySearch(&k, dfa->arrz.pdata, dfa->ln, sizeof(size_t) * dfa->col, _cbfcmpSize_t);
+			return *(size_t *)strGetValueMatrix(NULL, dfa, s, j, sizeof(size_t));
+		}
 	}
 	return 0;
 }
@@ -925,6 +966,272 @@ P_DFA CompileRegex2DFA(wchar_t ** ppwc)
 		DestroySyntaxTree(pnode);
 	}
 	return dfa;
+}
+
+int cbftvsPickRep(void * pitem, size_t param)
+{
+	P_TNODE_BY pnode = P2P_TNODE_BY(pitem);
+	if (NULL == pnode->ppnode[LEFT] && NULL == pnode->ppnode[RIGHT])
+	{
+		*(size_t *)param = *(size_t *)pnode->pdata;
+		return CBF_TERMINATE;
+	}
+	return CBF_CONTINUE;
+}
+
+int cbftvsDestroyPsetPI(void * pitem, size_t param)
+{
+	setDeleteT(((P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata)->pset);
+	return CBF_CONTINUE;
+}
+
+void DestroyPsetPI(P_SET_T pset)
+{
+	setTraverseT(pset, cbftvsDestroyPsetPI, 0, ETM_POSTORDER);
+	setDeleteT(pset);
+	pset = NULL;
+}
+
+int cbftvsSplitSetGroup(void * pitem, size_t param)
+{
+	size_t k = *(size_t *)P2P_TNODE_BY(pitem)->pdata;
+	P_SET_T psetPI = (P_SET_T)0[(size_t *)param];
+	P_DFA dfa = (P_DFA)1[(size_t *)param];
+	P_STATEGROUP psg = (P_STATEGROUP)2[(size_t *)param];
+	P_SET_T psetEND = (P_SET_T)3[(size_t *)param];
+
+	size_t i, j, l;
+	BOOL bfound = FALSE;
+
+	for (i = 1; i < dfa->col; ++i)
+	{
+		strGetValueMatrix(&j, dfa, k, i, sizeof(size_t));
+
+#ifdef DEBUG
+		printf("{ ");
+		setTraverseT(psg->pset, cbftvsPrintSet, 0, ETM_INORDER);
+		printf(" }\n");
+#endif
+
+		if (!setIsMemberT(psg->pset, &j, _grpCBFCompareInteger))
+		{	/* Split. */
+			STATEGROUP sg;
+			sg.pset = setCreateT();
+			sg.bsplit = FALSE;
+			sg.rep = k;
+
+			/* Alter psg->egs. */
+			if (1 == k)
+			{
+				sg.egs = EGS_START;
+				psg->egs = EGS_NORMAL;
+			}
+			else if (setIsMemberT(psetEND, &k, _grpCBFCompareInteger))
+				sg.egs = EGS_END;
+			else
+				sg.egs = EGS_NORMAL;
+
+			setRemoveT(psg->pset, &k, sizeof(size_t), _grpCBFCompareInteger);
+
+#ifdef DEBUG
+			printf("R:{ ");
+			setTraverseT(psg->pset, cbftvsPrintSet, 0, ETM_INORDER);
+			printf(" }\n");
+#endif
+
+			setInsertT(sg.pset, &k, sizeof(size_t), _grpCBFCompareInteger);
+
+			setInsertT(psetPI, &sg, sizeof(STATEGROUP), _grpCBFCompareInteger);
+
+			/* Alter psg->rep. */
+			if (psg->rep == k)
+			{
+				setTraverseT(psg->pset, cbftvsPickRep, (size_t)&l, ETM_INORDER);
+				psg->rep = l;
+			}
+
+			bfound = TRUE;
+		}
+	}
+	if (treArityBY(P2P_TNODE_BY(*psg->pset)) > 1)
+		if (FALSE == bfound)
+			psg->bsplit = FALSE;
+
+	return CBF_CONTINUE;
+}
+
+int cbftvsIsSplittable(void * pitem, size_t param)
+{
+	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
+	if (psg->bsplit)
+	{
+		*(P_STATEGROUP *)param = psg;
+		return CBF_TERMINATE;
+	}
+	*(P_STATEGROUP *)param = NULL;
+	return CBF_CONTINUE;
+}
+
+int cbftvsFillStates(void * pitem, size_t param)
+{
+	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
+	P_DFA dfar = (P_DFA)0[(size_t *)param];
+
+	if (EGS_START == psg->egs)
+		strSetValueMatrix(dfar, 1, 0, &psg->rep, sizeof(size_t));
+	else
+	{
+		if (EGS_END != psg->egs)
+			strSetValueMatrix(dfar, 1[(size_t *)param]++, 0, &psg->rep, sizeof(size_t));
+		else
+		{
+			size_t k;
+			k = psg->rep | SIGN;
+			strSetValueMatrix(dfar, 1[(size_t *)param]++, 0, &k, sizeof(size_t));
+		}
+	}
+
+	return CBF_CONTINUE;
+}
+int cbftvsFillImageArray(void * pitem, size_t param)
+{
+	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
+	if (setIsMemberT(psg->pset, &0[(size_t *)param], _grpCBFCompareInteger))
+	{
+		1[(size_t *)param] = psg->rep;
+		return CBF_TERMINATE;
+	}
+	return CBF_CONTINUE;
+}
+
+int cbftvsPrintPsetPI(void * pitem, size_t param)
+{
+	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
+	printf("PI: bsplit:%d. egs:%d. rep:%d. { ", psg->bsplit, psg->egs, psg->rep);
+	setTraverseT(psg->pset, cbftvsPrintSet, 0, ETM_INORDER);
+	printf(" }\n");
+	return CBF_CONTINUE;
+}
+
+P_DFA MinimizeDFA(P_DFA dfa)
+{
+	STATEGROUP sgs = { 0 }, sgf = { 0 }, * psg = NULL;
+	P_SET_T psetPI, psetEND;
+	P_DFA dfar = NULL;
+	P_ARRAY_Z parr;
+	size_t i, j, k;
+
+	sgs.pset = setCreateT();
+	sgf.pset = setCreateT();
+	psetPI = setCreateT();
+	psetEND = setCreateT();
+	
+	sgs.bsplit = sgf.bsplit = TRUE;
+
+	sgs.egs = EGS_START;
+	sgf.egs = EGS_END;
+
+	for (i = 1; i < dfa->ln; ++i)
+	{
+		strGetValueMatrix(&j, dfa, i, 0, sizeof(size_t));
+		if (SIGN & j)
+		{	/* End state. */
+			j &= (~SIGN);
+			setInsertT(sgf.pset, &j, sizeof(size_t), _grpCBFCompareInteger);
+			if (0 == sgf.rep)
+				sgf.rep = j;
+			setInsertT(psetEND, &j, sizeof(size_t), _grpCBFCompareInteger);
+		}
+		else /* Normal state. */
+		{
+			setInsertT(sgs.pset, &j, sizeof(size_t), _grpCBFCompareInteger);
+			if (0 == sgs.rep)
+				sgs.rep = j;
+		}
+	}
+
+	setInsertT(psetPI, &sgs, sizeof(STATEGROUP), _grpCBFCompareInteger);
+	setInsertT(psetPI, &sgf, sizeof(STATEGROUP), _grpCBFCompareInteger);
+
+#ifdef DEBUG
+	setTraverseT(psetPI, cbftvsPrintPsetPI, 0, ETM_INORDER);
+#endif
+
+	setTraverseT(psetPI, cbftvsIsSplittable, (size_t)&psg, ETM_LEVELORDER);
+	while (psg)
+	{
+		size_t a[4];
+		a[0] = (size_t)psetPI;
+		a[1] = (size_t)dfa;
+		a[2] = (size_t)psg;
+		a[3] = (size_t)psetEND;
+
+		if (treArityBY(P2P_TNODE_BY(*psg->pset)) <= 1)
+			psg->bsplit = FALSE;
+
+		if (psg->bsplit)
+			setTraverseT(psg->pset, cbftvsSplitSetGroup, (size_t)a, ETM_POSTORDER); /* Must be post-order. */
+
+#ifdef DEBUG
+		setTraverseT(psetPI, cbftvsPrintPsetPI, 0, ETM_INORDER);
+#endif
+		setTraverseT(psetPI, cbftvsIsSplittable, (size_t)&psg, ETM_LEVELORDER);
+	}
+
+#ifdef DEBUG
+	setTraverseT(psetPI, cbftvsPrintPsetPI, 0, ETM_INORDER);
+#endif
+
+	/* Fill DFA. */
+	dfar = strCreateMatrix(treArityBY(P2P_TNODE_BY(*psetPI)) + 1, dfa->col, sizeof(size_t));
+	memcpy(dfar->arrz.pdata, dfa->arrz.pdata, sizeof(size_t) * dfa->col);
+	
+	/* Fill states. */
+	{
+		size_t a[3];
+		a[0] = (size_t)dfar;
+		a[1] = 2;
+		a[2] = (size_t)psetEND;
+
+		setTraverseT(psetPI, cbftvsFillStates, (size_t)a, ETM_INORDER);
+	}
+
+	/* Build an array. */
+	parr = strCreateArrayZ(dfa->ln, sizeof(size_t) * 2);
+	for (i = 1; i < dfa->ln; ++i)
+	{
+		size_t a[2];
+
+		strGetValueMatrix(&j, dfa, i, 0, sizeof(size_t));
+		if (SIGN & j)
+			j &= (~SIGN);
+		*(size_t *)strLocateItemArrayZ(parr, sizeof(size_t) * 2, i) = j;
+		a[0] = j;
+		setTraverseT(psetPI, cbftvsFillImageArray, (size_t)a, ETM_LEVELORDER);
+		*((size_t *)strLocateItemArrayZ(parr, sizeof(size_t) * 2, i) + 1) = a[1];
+	}
+
+	/* Fill table. */
+	for (i = 1; i < dfar->ln; ++i)
+	{
+		strGetValueMatrix(&k, dfar, i, 0, sizeof(size_t));
+		if (SIGN & k)
+			k &= (~SIGN);
+		for (j = 1; j < dfar->col; ++j)
+		{
+			size_t l;
+			strGetValueMatrix(&l, dfa, k, j, sizeof(size_t));
+			strSetValueMatrix(dfar, i, j, ((size_t *)strBinarySearchArrayZ(parr, &l, sizeof(size_t) * 2, _grpCBFCompareInteger) + 1), sizeof(size_t));
+		}
+	}
+
+	svQuickSort(dfar->arrz.pdata + sizeof(size_t) * dfar->col * 2, dfar->col - 1, sizeof(size_t) * dfar->col, _grpCBFCompareInteger);
+
+	DestroyPsetPI(psetPI);
+	setDeleteT(psetEND);
+	strDeleteArrayZ(parr);
+
+	return dfar;
 }
 
 void DestroyDFA(P_DFA dfa)
