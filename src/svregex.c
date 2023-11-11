@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1110230611L01239
+  * File ID:     1022231324A1110230611L01240
   * License:     GPLv2.
   */
 #define _CRT_SECURE_NO_WARNINGS
@@ -1048,6 +1048,7 @@ int cbftvsSplitSetGroup(void * pitem, size_t param)
 				}
 
 				bfound = TRUE;
+				break;
 			}
 		}
 	}
