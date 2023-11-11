@@ -1224,7 +1224,7 @@ P_DFA MinimizeDFA(P_DFA dfa)
 		}
 	}
 
-	svQuickSort(dfar->arrz.pdata + sizeof(size_t) * dfar->col * 2, dfar->col - 1, sizeof(size_t) * dfar->col, _grpCBFCompareInteger);
+	svQuickSort(dfar->arrz.pdata + sizeof(size_t) * dfar->col * 2, dfar->col - 2, sizeof(size_t) * dfar->col, _cbfcmpSize_t);
 
 	DestroyPsetPI(psetPI);
 	setDeleteT(psetEND);
