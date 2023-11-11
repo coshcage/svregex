@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1024232015L00934
+  * File ID:     1022231324A1110230611L01239
   * License:     GPLv2.
   */
 #define _CRT_SECURE_NO_WARNINGS
@@ -1015,42 +1015,40 @@ int cbftvsSplitSetGroup(void * pitem, size_t param)
 
 		if (!setIsMemberT(psg->pset, &j, _grpCBFCompareInteger))
 		{	/* Split. */
-			STATEGROUP sg;
-			sg.pset = setCreateT();
-			sg.bsplit = FALSE;
-			sg.rep = k;
-
-			/* Alter psg->egs. */
-			if (1 == k)
+			if (1 != k)
 			{
-				sg.egs = EGS_START;
-				psg->egs = EGS_NORMAL;
-			}
-			else if (setIsMemberT(psetEND, &k, _grpCBFCompareInteger))
-				sg.egs = EGS_END;
-			else
-				sg.egs = EGS_NORMAL;
+				STATEGROUP sg;
+				sg.pset = setCreateT();
+				sg.bsplit = FALSE;
+				sg.rep = k;
 
-			setRemoveT(psg->pset, &k, sizeof(size_t), _grpCBFCompareInteger);
+				/* Alter psg->egs. */
+				if (setIsMemberT(psetEND, &k, _grpCBFCompareInteger))
+					sg.egs = EGS_END;
+				else
+					sg.egs = EGS_NORMAL;
+
+				setRemoveT(psg->pset, &k, sizeof(size_t), _grpCBFCompareInteger);
 
 #ifdef DEBUG
-			printf("R:{ ");
-			setTraverseT(psg->pset, cbftvsPrintSet, 0, ETM_INORDER);
-			printf(" }\n");
+				printf("R:{ ");
+				setTraverseT(psg->pset, cbftvsPrintSet, 0, ETM_INORDER);
+				printf(" }\n");
 #endif
 
-			setInsertT(sg.pset, &k, sizeof(size_t), _grpCBFCompareInteger);
+				setInsertT(sg.pset, &k, sizeof(size_t), _grpCBFCompareInteger);
 
-			setInsertT(psetPI, &sg, sizeof(STATEGROUP), _grpCBFCompareInteger);
+				setInsertT(psetPI, &sg, sizeof(STATEGROUP), _grpCBFCompareInteger);
 
-			/* Alter psg->rep. */
-			if (psg->rep == k)
-			{
-				setTraverseT(psg->pset, cbftvsPickRep, (size_t)&l, ETM_INORDER);
-				psg->rep = l;
+				/* Alter psg->rep. */
+				if (psg->rep == k)
+				{
+					setTraverseT(psg->pset, cbftvsPickRep, (size_t)&l, ETM_INORDER);
+					psg->rep = l;
+				}
+
+				bfound = TRUE;
 			}
-
-			bfound = TRUE;
 		}
 	}
 	if (treArityBY(P2P_TNODE_BY(*psg->pset)) > 1)
