@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1110230611L01240
+  * File ID:     1022231324A1110230611L01244
   * License:     GPLv2.
   */
 #define _CRT_SECURE_NO_WARNINGS
@@ -924,9 +924,13 @@ size_t NextStateM(P_DFA dfa, size_t s, wchar_t a)
 		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata, dfa->col, sizeof(size_t), _grpCBFCompareInteger);
 		if (NULL != r)
 		{
-			size_t j, k = (size_t)(r - (size_t *)dfa->arrz.pdata);
-			j = *(size_t *)svBinarySearch(&k, dfa->arrz.pdata, dfa->ln, sizeof(size_t) * dfa->col, _cbfcmpSize_t);
-			return *(size_t *)strGetValueMatrix(NULL, dfa, s, j, sizeof(size_t));
+			size_t j, k = (size_t)(r - (size_t *)dfa->arrz.pdata), * l;
+			l = svBinarySearch(&k, dfa->arrz.pdata, dfa->ln, sizeof(size_t) * dfa->col, _cbfcmpSize_t);
+			if (NULL != l)
+			{
+				j = *l;
+				return *(size_t *)strGetValueMatrix(NULL, dfa, s, j, sizeof(size_t));
+			}
 		}
 	}
 	return 0;
@@ -1224,7 +1228,7 @@ P_DFA MinimizeDFA(P_DFA dfa)
 		}
 	}
 
-	svQuickSort(dfar->arrz.pdata + sizeof(size_t) * dfar->col * 2, dfar->col - 2, sizeof(size_t) * dfar->col, _cbfcmpSize_t);
+	svQuickSort(dfar->arrz.pdata + sizeof(size_t) * dfar->col * 2, dfar->ln - 2, sizeof(size_t) * dfar->col, _cbfcmpSize_t);
 
 	DestroyPsetPI(psetPI);
 	setDeleteT(psetEND);
