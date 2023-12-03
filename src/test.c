@@ -2,7 +2,7 @@
  * Name:        test.c
  * Description: SV Regular Expression launcher.
  * Author:      cosh.cage#hotmail.com
- * File ID:     1024231324C1024231324L00043
+ * File ID:     1024231324C1203231047L00045
  * License:     GPLv2.
  */
 #define _CRT_SECURE_NO_WARNINGS 1
@@ -17,9 +17,10 @@ int main(int argc, char ** argv)
 	size_t i, j, k, l;
 	wchar_t wcs[BUFSIZ] = { 0 };
 	wchar_t pattern[BUFSIZ] = L"(a|b)*abb";
-	wchar_t * p = pattern;
 
-	P_DFA dfa = CompileRegex2DFA(&p);
+	P_DFA dfa = CompileRegex2DFA(pattern), dfa2;
+
+	dfa2 = MinimizeDFA(dfa);
 
 	PrintDFA(dfa);
 
@@ -29,7 +30,7 @@ int main(int argc, char ** argv)
 	k = wcslen(wcs);
 	for (i = 0; i < k; ++i)
 	{
-		j = NextState(dfa, j, wcs[i]);
+		j = NextStateM(dfa2, j, wcs[i]);
 		strGetValueMatrix(&l, dfa, j, 0, sizeof(size_t));
 		if (l & SIGN)
 		{
@@ -39,4 +40,5 @@ int main(int argc, char ** argv)
 	}
 
 	DestroyDFA(dfa);
+	DestroyDFA(dfa2);
 }
