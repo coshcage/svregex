@@ -2,7 +2,7 @@
  * Name:        svregex.h
  * Description: SV Regular Expression Interface.
  * Author:      cosh.cage#hotmail.com
- * File ID:     1024231324B1024232001L00027
+ * File ID:     1024231324B1203231044L00034
  * License:     GPLv2.
  */
 #ifndef _SVREGEX_H_
@@ -19,7 +19,7 @@
 
 typedef P_MATRIX P_DFA; /* Redefine P_MATRIX. */
 
-P_DFA  CompileRegex2DFA (wchar_t ** ppwc);
+P_DFA  CompileRegex2DFA (wchar_t *  pwc);
 void   DestroyDFA       (P_DFA      dfa);
 size_t NextState        (P_DFA      dfa, size_t s, wchar_t a);
 size_t NextStateM       (P_DFA      dfa, size_t s, wchar_t a);

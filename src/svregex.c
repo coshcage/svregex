@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1110230611L01244
+  * File ID:     1022231324A1203231043L01245
   * License:     GPLv2.
   */
 #define _CRT_SECURE_NO_WARNINGS
@@ -936,13 +936,14 @@ size_t NextStateM(P_DFA dfa, size_t s, wchar_t a)
 	return 0;
 }
 
-P_DFA CompileRegex2DFA(wchar_t ** ppwc)
+P_DFA CompileRegex2DFA(wchar_t * pwc)
 {
 	size_t i, j = 0;
 	P_TNODE_BY pnode;
 	P_DFA dfa = NULL;
+	wchar_t ** ppwc = &pwc;
 
-	pnode = Parse(ppwc, &i);;
+	pnode = Parse(ppwc, &i);
 	if (NULL != pnode)
 	{
 		P_ARRAY_Z parrfollowpos, parrlvfndtbl;
