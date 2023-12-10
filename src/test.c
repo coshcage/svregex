@@ -2,7 +2,7 @@
  * Name:        test.c
  * Description: SV Regular Expression launcher.
  * Author:      cosh.cage#hotmail.com
- * File ID:     1024231324C1203231047L00045
+ * File ID:     1024231324C1203231047L00044
  * License:     GPLv2.
  */
 #define _CRT_SECURE_NO_WARNINGS 1
@@ -10,7 +10,6 @@
 #include <wchar.h>
 #include "svregex.h"
 
-void PrintDFA(P_DFA dfa);
 
 int main(int argc, char ** argv)
 {
