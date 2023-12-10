@@ -2,37 +2,40 @@
   * Name:        svregex.c
   * Description: SV Regular Expression.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1203231043L01245
+  * File ID:     1022231324A1210231300L01623
   * License:     GPLv2.
   */
-#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
+#include <string.h>
 #include "svregex.h"
-#include "StoneValley/src/svstack.h"
-#include "StoneValley/src/svqueue.h"
-#include "StoneValley/src/svtree.h"
-#include "StoneValley/src/svset.h"
+#include "svstack.h"
+#include "svqueue.h"
+#include "svtree.h"
+#include "svset.h"
 
+/* A structure describes lexicon type. */
 typedef enum en_Terminator
 {
-	T_LeftBracket = -1,
-	T_Jumpover,
-	T_Character,
-	T_Selection,
-	T_Concatenate,
-	T_Closure,
-	T_RightBracket,
+	T_LeftBracket = -1, /* ( */
+	T_Jumpover,         /* \ */
+	T_Character,        /* n */
+	T_Selection,        /* | */
+	T_Concatenate,      /* . */
+	T_Closure,          /* * */
+	T_RightBracket,     /* ) */
 } TERMINATOR;
 
+/* A structure describes the lexicon in a syntax tree. */
 typedef struct st_Lexicon
 {
 	TERMINATOR type;
-	wchar_t    ch;
+	wchar_t    ch;       /* Character. */
 	BOOL       nullable;
 	P_SET_T    firstpos;
 	P_SET_T    lastpos;
 } LEXICON, * P_LEXICON;
 
+/* Dstates set of sets. */
 typedef struct st_DStates
 {
 	P_SET_T pset;
@@ -40,12 +43,14 @@ typedef struct st_DStates
 	size_t  label;
 } DSTATES, * P_DSTATES;
 
+/* Leaf node table. */
 typedef struct st_LVFNDTBL
 {
 	wchar_t ch;
 	size_t  i;
 } LVFNDTBL, * P_LVFNDTBL;
 
+/* Group state enumeration. */
 typedef enum en_GROUPSTATE
 {
 	EGS_NORMAL,
@@ -53,6 +58,7 @@ typedef enum en_GROUPSTATE
 	EGS_END
 } GROUPSTATE;
 
+/* Structure of the element of set PI. */
 typedef struct st_STATEGROUP
 {
 	P_SET_T    pset;
@@ -61,10 +67,18 @@ typedef struct st_STATEGROUP
 	GROUPSTATE egs;
 } STATEGROUP, * P_STATEGROUP;
 
-STACK_L stkOperand;
-STACK_L stkOperator;
+STACK_L stkOperand;  /* Operand stack. */
+STACK_L stkOperator; /* Operator stack. */
 
-LEXICON Splitter(wchar_t ** pwc, BOOL * pbt)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: Splitter
+ * Description:   Lexical analyzer.
+ * Parameters:
+ *        pwc Pointer to a wide character string.
+ *        pbt Pointer to a boolean variable that is used to store converting state.
+ * Return value:  A LEXICON structure.
+ */
+static LEXICON Splitter(wchar_t ** pwc, BOOL * pbt)
 {
 	wchar_t wc;
 	LEXICON lex = { 0 };
@@ -89,47 +103,47 @@ LEXICON Splitter(wchar_t ** pwc, BOOL * pbt)
 		{
 			switch (lex.ch)
 			{
-			case L'e':
+			case L'e':	/* Epsilon. */
 				lex.ch = L'\0';
 				lex.type = T_Character;
 				*pbt = FALSE;
 				break;
-			case L'n':
+			case L'n':	/* New line. */
 				lex.ch = L'\n';
 				lex.type = T_Character;
 				*pbt = FALSE;
 				break;
-			case L't':
+			case L't':	/* Table. */
 				lex.ch = L'\t';
 				lex.type = T_Character;
 				*pbt = FALSE;
 				break;
-			case L'a':
+			case L'a':	/* Alarm. */
 				lex.ch = L'\a';
 				lex.type = T_Character;
 				*pbt = FALSE;
 				break;
-			case L'r':
+			case L'r':	/* Return. */
 				lex.ch = L'\r';
 				lex.type = T_Character;
 				*pbt = FALSE;
 				break;
-			case L'v':
+			case L'v': /* Vertical table. */
 				lex.ch = L'\v';
 				lex.type = T_Character;
 				*pbt = FALSE;
 				break;
-			case L'f':
+			case L'f':	/* Form feed. */
 				lex.ch = L'\f';
 				lex.type = T_Character;
 				*pbt = FALSE;
 				break;
-			case L'b':
+			case L'b':	/* Back space. */
 				lex.ch = L'\b';
 				lex.type = T_Character;
 				*pbt = FALSE;
 				break;
-			case L'.':
+			case L'.':	/* Operators. */
 			case L'|':
 			case L'*':
 			case L'(':
@@ -169,13 +183,29 @@ LEXICON Splitter(wchar_t ** pwc, BOOL * pbt)
 	return lex;
 }
 
-int cbftvsPrintSet(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsPrintSet
+ * Description:   Print size_t element set.
+ * Parameters:
+ *      pitem Pointer to a each binary tree node in set.
+ *      param N/A.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsPrintSet(void * pitem, size_t param)
 {
+	DWC4100(param);
 	wprintf(L"%zd, ", *(size_t *)(P2P_TNODE_BY(pitem)->pdata));
 	return CBF_CONTINUE;
 }
 
-void PrintLexicon(LEXICON lex)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: PrintLexicon
+ * Description:   Print LEXICON structure.
+ * Parameter:
+ *       lex A lexicon structure to be printed.
+ * Return value:  N/A.
+ */
+static void PrintLexicon(LEXICON lex)
 {
 	P_SET_T p, q;
 	p = lex.firstpos;
@@ -183,7 +213,7 @@ void PrintLexicon(LEXICON lex)
 	switch (lex.type)
 	{
 	case T_Character:
-		if (WEOF == lex.ch)
+		if (WEOF == (BOOL)lex.ch)
 			wprintf(L"CHAR: \'(#)\'  ");
 		else if (L'\0' == lex.ch)
 			wprintf(L"CHAR: \'\\e\' ");
@@ -216,7 +246,15 @@ void PrintLexicon(LEXICON lex)
 	wprintf(L"}\n");
 }
 
-void PrintSyntaxTree(P_TNODE_BY pnode, size_t space)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: PrintSyntaxTree
+ * Description:   Print the syntax tree of a regular expression.
+ * Parameters:
+ *      pnode Pointer to a binary tree node.
+ *      space Spaces to be inserted.
+ * Return value:  N/A.
+ */
+static void PrintSyntaxTree(P_TNODE_BY pnode, size_t space)
 {
 	size_t i;
 	if (NULL == pnode)
@@ -224,11 +262,10 @@ void PrintSyntaxTree(P_TNODE_BY pnode, size_t space)
 
 	space += TREE_NODE_SPACE_COUNT;
 
-	// Process right child first
+	/* Process right child first. */
 	PrintSyntaxTree(pnode->ppnode[RIGHT], space);
 
-	// Print current node after space
-	// count
+	/* Print current node after space count. */
 	printf("\n");
 	for (i = TREE_NODE_SPACE_COUNT; i < space; ++i)
 		printf(" ");
@@ -237,11 +274,22 @@ void PrintSyntaxTree(P_TNODE_BY pnode, size_t space)
 	PrintSyntaxTree(pnode->ppnode[LEFT], space);
 }
 
+/* Extern function to be invoked. */
 extern int _grpCBFCompareInteger(const void * px, const void * py);
 
-int cbftvsComputeNullableAndPos(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsComputeNullableAndPos
+ * Description:   Calculate the nullable parameter and POS sets.
+ * Parameters:
+ *      pitem Pointer to a binary tree node.
+ *      param N/A.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 {
 	P_TNODE_BY pnode = P2P_TNODE_BY(pitem);
+
+	DWC4100(param);
 
 	if (NULL != pnode->ppnode[LEFT]) /* pnode is not a leaf node. */
 	{
@@ -323,14 +371,29 @@ int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 				setCopyT(((P_LEXICON)pnode->ppnode[LEFT]->pdata)->lastpos, sizeof(size_t)) :
 				NULL;
 			break;
+		case T_LeftBracket:
+		case T_Jumpover:
+		case T_Character:
+		case T_RightBracket:
+			break;
 		}
 	}
 	return CBF_CONTINUE;
 }
 
-int cbftvsCleanStruct(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsCleanStruct
+ * Description:   Clean structures in a syntax tree.
+ * Parameters:
+ *      pitem Pointer to a binary tree node.
+ *      param N/A.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsCleanStruct(void * pitem, size_t param)
 {
 	P_LEXICON plex = (P_LEXICON)(P2P_TNODE_BY(pitem)->pdata);
+
+	DWC4100(param);
 
 	if (NULL != plex->firstpos)
 		setDeleteT(plex->firstpos);
@@ -340,13 +403,28 @@ int cbftvsCleanStruct(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-void DestroySyntaxTree(P_TNODE_BY pnode)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: DestroySyntaxTree
+ * Description:   Deallocate a syntax tree.
+ * Parameter:
+ *     pnode Pointer to the root node of syntax tree.
+ * Return value:  N/A.
+ */
+static void DestroySyntaxTree(P_TNODE_BY pnode)
 {
 	treTraverseBYPost(pnode, cbftvsCleanStruct, 0);
 	treFreeBY(&pnode);
 }
 
-P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: Parse
+ * Description:   The parser that is used to convert a regular expression to syntax tree uses Dijkstra's two stack algorithm.
+ * Parameters:
+ *        pwc Pointer to wide character string.
+ *    pleaves Return how many leaves there are in the tree.
+ * Return value:  The root node of syntax tree.
+ */
+static P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 {
 	BOOL bt = FALSE;
 	size_t posCtr = 1;
@@ -368,12 +446,12 @@ P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 		else
 		{
 			/* We need to insert concatenation in the following circumstances:
-			 * a & b
-			 * a & (
-			 * ) & a
-			 * ) & (
-			 * * & a
-			 * * & (
+			 * a . b
+			 * a . (
+			 * ) . a
+			 * ) . (
+			 * * . a
+			 * * . (
 			 */
 			switch (tl.type)
 			{
@@ -388,6 +466,11 @@ P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 			case T_Closure:
 				if (T_Character == lex.type || T_LeftBracket == lex.type)
 					i = 2;
+				break;
+			case T_Jumpover:
+			case T_Selection:
+			case T_Concatenate:
+			case T_LeftBracket:
 				break;
 			}
 
@@ -446,6 +529,11 @@ P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 								pnode1->ppnode[LEFT] = pnode2;
 
 								break;
+							case T_Jumpover:
+							case T_Character:
+							case T_RightBracket:
+							case T_LeftBracket:
+								break;
 							}
 							stkPushL(&stkOperand, &pnode1, sizeof(P_TNODE_BY));
 						}
@@ -481,6 +569,11 @@ P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 									stkPopL(&pnode2, sizeof(P_TNODE_BY), &stkOperand);
 									pnode1->ppnode[LEFT] = pnode2;
 									break;
+								case T_Jumpover:
+								case T_Character:
+								case T_RightBracket:
+								case T_LeftBracket:
+									break;
 								}
 								stkPushL(&stkOperand, &pnode1, sizeof(P_TNODE_BY));
 							}
@@ -493,10 +586,12 @@ P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 					stkPopL(&pnode1, sizeof(P_TNODE_BY), &stkOperator);
 					strDeleteNodeD(pnode1);
 					break;
+				case T_Jumpover:
+					break;
 				}
 			}
 		}
-	} while (WEOF != lex.ch);
+	} while (WEOF != (BOOL)lex.ch);
 
 	for (;;)
 	{
@@ -516,6 +611,11 @@ P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 			case T_Closure:
 				stkPopL(&pnode2, sizeof(P_TNODE_BY), &stkOperand);
 				pnode1->ppnode[LEFT] = pnode2;
+				break;
+			case T_Jumpover:
+			case T_Character:
+			case T_RightBracket:
+			case T_LeftBracket:
 				break;
 			}
 			stkPushL(&stkOperand, &pnode1, sizeof(P_TNODE_BY));
@@ -548,7 +648,15 @@ P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 	return pnode;
 }
 
-int cbftvsStarTravFirstpos(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsStarTravFirstpos
+ * Description:   Traverse the firstpos set.
+ * Parameters:
+ *      pitem Pointer to each size_t element in the set.
+ *      param Pointer to a size_t[2] array.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsStarTravFirstpos(void * pitem, size_t param)
 {
 	P_ARRAY_Z parr = (P_ARRAY_Z)0[(size_t *)param];
 
@@ -562,7 +670,15 @@ int cbftvsStarTravFirstpos(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-int cbftvsStarTravLastpos(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsStarTravLastpos
+ * Description:   Traverse the lastpos set.
+ * Parameters:
+ *      pitem Pointer to each size_t element in the set.
+ *      param Pointer to a size_t[2] array.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsStarTravLastpos(void * pitem, size_t param)
 {
 	size_t a[2];
 
@@ -575,7 +691,15 @@ int cbftvsStarTravLastpos(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-int cbftvsComputeFollowpos(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsComputeFollowpos
+ * Description:   Calculate the followpos set.
+ * Parameters:
+ *      pitem Pointer to each size_t element in the set.
+ *      param Pointer to a size_t[2] array.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsComputeFollowpos(void * pitem, size_t param)
 {
 	size_t a[2];
 	P_TNODE_BY pnode = P2P_TNODE_BY(pitem);
@@ -596,7 +720,15 @@ int cbftvsComputeFollowpos(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-P_ARRAY_Z CreateFollowPosArray(P_TNODE_BY pnode, size_t inodes)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: CreateFollowPosArray
+ * Description:   Create followpos array.
+ * Parameters:
+ *      pnode Pointer to the root node of a syntax tree.
+ *     inodes Sign how many nodes there are in the array.
+ * Return value:  New allocated array.
+ */
+static P_ARRAY_Z CreateFollowPosArray(P_TNODE_BY pnode, size_t inodes)
 {
 	P_SET_T nil = NULL;
 
@@ -609,7 +741,15 @@ P_ARRAY_Z CreateFollowPosArray(P_TNODE_BY pnode, size_t inodes)
 	return parr;
 }
 
-int cbftvsPrintFollowposArray(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsPrintFollowposArray
+ * Description:   Print followpos array.
+ * Parameters:
+ *      pitem Pointer to each element of the array.
+ *      param size_t variable to print numbers.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsPrintFollowposArray(void * pitem, size_t param)
 {
 	P_SET_T pset = *(P_SET_T *)pitem;
 	wprintf(L"%zd\t{", ++0[(size_t *)param]);
@@ -618,21 +758,45 @@ int cbftvsPrintFollowposArray(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-int cbftvsClearSetT(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsPrintFollowposArray
+ * Description:   Print followpos array.
+ * Parameters:
+ *      pitem Pointer to each element of the array.
+ *      param N/A.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsClearSetT(void * pitem, size_t param)
 {
+	DWC4100(param);
 	P_SET_T pset = *(P_SET_T *)pitem;
 	if (NULL != pset)
 		setDeleteT(pset);
 	return CBF_CONTINUE;
 }
 
-void DestroyFollowposArray(P_ARRAY_Z parr)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: DestroyFollowposArray
+ * Description:   Deallocate followpos array.
+ * Parameter:
+ *     pitem Pointer to followpos array.
+ * Return value:  N/A.
+ */
+static void DestroyFollowposArray(P_ARRAY_Z parr)
 {
 	strTraverseArrayZ(parr, sizeof(P_SET_T), cbftvsClearSetT, 0, FALSE);
 	strDeleteArrayZ(parr);
 }
 
-int cbftvsConstructLeafNodeTable(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsConstructLeafNodeTable
+ * Description:   Build the leaf node table.
+ * Parameters:
+ *      pitem Pointer to each element of binary tree.
+ *      param Pointer to an element of leaf node table.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsConstructLeafNodeTable(void * pitem, size_t param)
 {
 	P_TNODE_BY pnode = P2P_TNODE_BY(pitem);
 
@@ -641,7 +805,7 @@ int cbftvsConstructLeafNodeTable(void * pitem, size_t param)
 			NULL == pnode->ppnode[LEFT] &&
 			NULL == pnode->ppnode[RIGHT] &&
 			'\0' != ((P_LEXICON)pnode->pdata)->ch
-			&& WEOF != ((P_LEXICON)pnode->pdata)->ch
+			&& WEOF != (BOOL)((P_LEXICON)pnode->pdata)->ch
 			)
 	{
 		(*(P_LVFNDTBL *)param)->ch = ((P_LEXICON)pnode->pdata)->ch;
@@ -652,7 +816,15 @@ int cbftvsConstructLeafNodeTable(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-P_ARRAY_Z ConstructLeafNodeTable(P_TNODE_BY pnode, size_t inodes)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsConstructLeafNodeTable
+ * Description:   Build the leaf node table.
+ * Parameters:
+ *      pitem Pointer to each element of binary tree.
+ *     inodes Node nambers in the table.
+ * Return value:  New built leaf node table.
+ */
+static P_ARRAY_Z ConstructLeafNodeTable(P_TNODE_BY pnode, size_t inodes)
 {
 	P_ARRAY_Z parr = strCreateArrayZ(inodes - 1, sizeof(LVFNDTBL));
 	P_LVFNDTBL pl = (P_LVFNDTBL)strLocateItemArrayZ(parr, sizeof(LVFNDTBL), 0);
@@ -662,34 +834,76 @@ P_ARRAY_Z ConstructLeafNodeTable(P_TNODE_BY pnode, size_t inodes)
 	return parr;
 }
 
-int cbftvsPrintLeafNodeTable(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsPrintLeafNodeTable
+ * Description:   Print the leaf node table.
+ * Parameters:
+ *      pitem Pointer to each element of leaf node table.
+ *      param N/A.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsPrintLeafNodeTable(void * pitem, size_t param)
 {
+	DWC4100(param);
+
 	wprintf(L"%c\t%ld\n", ((P_LVFNDTBL)pitem)->ch, ((P_LVFNDTBL)pitem)->i);
 
 	return CBF_CONTINUE;
 }
 
-int cbfcmpWChar_t(const void * px, const void * py)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbfcmpWChar_t
+ * Description:   Compare wchar_ts.
+ * Parameters:
+ *         px Pointer to a wchar_t value.
+ *         py Pointer to another wchar_t value.
+ * Return value:  1, -1, 0 respectively.
+ */
+static int cbfcmpWChar_t(const void * px, const void * py)
 {
 	if (*(wchar_t *)px > *(wchar_t *)py) return  1;
 	if (*(wchar_t *)px < *(wchar_t *)py) return -1;
 	return 0;
 }
 
-int cbftvsCompressInputSymbols(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsCompressInputSymbols
+ * Description:   Use a set to absorb input symbols.
+ * Parameters:
+ *      pitem Pointer to each element of leaf node table.
+ *      param Pointer to a set.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsCompressInputSymbols(void * pitem, size_t param)
 {
 	setInsertT((P_SET_T)param, &(((P_LVFNDTBL)pitem)->ch), sizeof(wchar_t), cbfcmpWChar_t);
 	return CBF_CONTINUE;
 }
 
-int cbftvsFillDFAHeader(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsFillDFAHeader
+ * Description:   Fill DFA header by input symbols.
+ * Parameters:
+ *      pitem Pointer to each node of a set.
+ *      param Pointer to a pointer of a size_t.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsFillDFAHeader(void * pitem, size_t param)
 {
 	**(size_t **)param = (size_t) * (wchar_t *)P2P_TNODE_BY(pitem)->pdata;
 	++*(size_t **)param;
 	return CBF_CONTINUE;
 }
 
-int cbftvsFindUnmarked(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsFindUnmarked
+ * Description:   Find unmarked set in set Dstates.
+ * Parameters:
+ *      pitem Pointer to each node of set Dstates.
+ *      param Pointer to DSTATE structure.
+ * Return value:  CBF_CONTINUE and CBF_TERMINATE respectively.
+ */
+static int cbftvsFindUnmarked(void * pitem, size_t param)
 {
 	if (TRUE != ((P_DSTATES)(P2P_TNODE_BY(pitem)->pdata))->mark)
 	{
@@ -699,7 +913,15 @@ int cbftvsFindUnmarked(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-int cbftvsCmpTwoSets(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsCmpTwoSets
+ * Description:   Compare two size_t element sets.
+ * Parameters:
+ *      pitem Pointer to each node of a set.
+ *      param Pointer to a size_t[3] array.
+ * Return value:  CBF_CONTINUE and CBF_TERMINATE respectively.
+ */
+static int cbftvsCmpTwoSets(void * pitem, size_t param)
 {
 	if (setIsEqualT(((P_DSTATES)P2P_TNODE_BY(pitem)->pdata)->pset, (P_SET_T)0[(size_t *)param], _grpCBFCompareInteger))
 	{
@@ -710,6 +932,12 @@ int cbftvsCmpTwoSets(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
+/* Function name: PrintDFA
+ * Description:   Print DFA to the console.
+ * Parameters:
+ *       pmtx Pointer to a DFA.
+ * Return value:  N/A.
+ */
 void PrintDFA(P_DFA pmtx)
 {
 	size_t i, j, k;
@@ -731,24 +959,49 @@ void PrintDFA(P_DFA pmtx)
 	}
 }
 
-int cbftvsDestroyDstates(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsDestroyDstates
+ * Description:   Deallocate set Dstates.
+ * Parameters:
+ *      pitem Pointer to each node of set PI.
+ *      param N/A.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsDestroyDstates(void * pitem, size_t param)
 {
 	P_DSTATES pd;
+	DWC4100(param);
 	pd = (P_DSTATES)P2P_TNODE_BY(pitem)->pdata;
 	if (pd->pset)
 		setDeleteT(pd->pset);
 	return CBF_CONTINUE;
 }
 
-void DestroyDstates(P_SET_T pds)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsDestroyDstates
+ * Description:   Deallocate set PI.
+ * Parameters:
+ *        pds Pointer to each node of set Dstates.
+ * Return value:  N/A.
+ */
+static void DestroyDstates(P_SET_T pds)
 {
 	setTraverseT(pds, cbftvsDestroyDstates, 0, ETM_POSTORDER);
 	setDeleteT(pds);
 }
 
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsPrintDstates
+ * Description:   Print set Dstates.
+ * Parameters:
+ *      pitem Pointer to each node of set Dstates.
+ *      param N/A.
+ * Return value:  CBF_CONTINUE only.
+ */
 int cbftvsPrintDstates(void * pitem, size_t param)
 {
 	P_DSTATES pd;
+	DWC4100(param);
 	pd = (P_DSTATES)P2P_TNODE_BY(pitem)->pdata;
 	if (pd->pset)
 	{
@@ -759,14 +1012,31 @@ int cbftvsPrintDstates(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-void PrintDstates(P_SET_T pset)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: PrintDstates
+ * Description:   Print set Dstates.
+ * Parameters:
+ *       pset Pointer to set Dstates.
+ * Return value:  N/A.
+ */
+static void PrintDstates(P_SET_T pset)
 {
 	printf("DSTATES:{ ");
 	setTraverseT(pset, cbftvsPrintDstates, 0, ETM_INORDER);
 	printf(" }\n");
 }
 
-P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_BY proot, size_t iend)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: ConstructDFA
+ * Description:   Construct a DFA.
+ * Parameters:
+ *    parflps Pointer to followpos array.
+ *parlvfndtbl Pointer to leaf node table.
+ *      proot Pointer to the root of syntax tree.
+ *       iend End state.
+ * Return value:  Pointer to a new DFA.
+ */
+static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_BY proot, size_t iend)
 {
 	P_MATRIX dfa = NULL;
 	DSTATES d;
@@ -894,7 +1164,15 @@ P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_BY proot
 	return dfa;
 }
 
-int _cbfcmpSize_t(const void * px, const void * py)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: _cbfcmpSize_t
+ * Description:   Compare two size_ts with their sign. 
+ * Parameters:
+ *         px Pointer to a size_t.
+ *         py Pointer to another size_t.
+ * Return value:  1, -1 and 0 respectively.
+ */
+static int _cbfcmpSize_t(const void * px, const void * py)
 {
 	size_t x, y;
 	x = *(size_t *)px;
@@ -904,6 +1182,14 @@ int _cbfcmpSize_t(const void * px, const void * py)
 	return _grpCBFCompareInteger(&x, &y);
 }
 
+/* Function name: NextState
+ * Description:   Get next state for a DFA.
+ * Parameters:
+ *        dfa Pointer to a dfa.
+ *          s Current state.
+ *          a Input symbol.
+ * Return value:  The next state.
+ */
 size_t NextState(P_DFA dfa, size_t s, wchar_t a)
 {
 	if (NULL != dfa && s > 0 && s < dfa->ln)
@@ -916,6 +1202,14 @@ size_t NextState(P_DFA dfa, size_t s, wchar_t a)
 	return 0;
 }
 
+/* Function name: NextStateM
+ * Description:   Get next state for a minimized DFA.
+ * Parameters:
+ *        dfa Pointer to a dfa.
+ *          s Current state.
+ *          a Input symbol.
+ * Return value:  The next state.
+ */
 size_t NextStateM(P_DFA dfa, size_t s, wchar_t a)
 {
 	if (NULL != dfa && s > 0 && s < dfa->ln)
@@ -936,6 +1230,12 @@ size_t NextStateM(P_DFA dfa, size_t s, wchar_t a)
 	return 0;
 }
 
+/* Function name: CompileRegex2DFA
+ * Description:   Compile a regular expression to a DFA.
+ * Parameter:
+ *       pwc Pointer to a regular expression.
+ * Return value:  A new allocated DFA.
+ */
 P_DFA CompileRegex2DFA(wchar_t * pwc)
 {
 	size_t i, j = 0;
@@ -973,7 +1273,15 @@ P_DFA CompileRegex2DFA(wchar_t * pwc)
 	return dfa;
 }
 
-int cbftvsPickRep(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsPickRep
+ * Description:   Pick a representation.
+ * Parameters:
+ *      pitem Pointer to each node of a set.
+ *      param Pointer to a size_t.
+ * Return value:  CBF_CONTINUE and CBF_TERMINATE respectively.
+ */
+static int cbftvsPickRep(void * pitem, size_t param)
 {
 	P_TNODE_BY pnode = P2P_TNODE_BY(pitem);
 	if (NULL == pnode->ppnode[LEFT] && NULL == pnode->ppnode[RIGHT])
@@ -984,20 +1292,44 @@ int cbftvsPickRep(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-int cbftvsDestroyPsetPI(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsDestroyPsetPI
+ * Description:   Deallocate set PI.
+ * Parameters:
+ *      pitem Pointer to each node of a set.
+ *      param N/A.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsDestroyPsetPI(void * pitem, size_t param)
 {
+	DWC4100(param);
 	setDeleteT(((P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata)->pset);
 	return CBF_CONTINUE;
 }
 
-void DestroyPsetPI(P_SET_T pset)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: DestroyPsetPI
+ * Description:   Deallocate set PI.
+ * Parameter:
+ *      pset Pointer to set PI.
+ * Return value:  N/A.
+ */
+static void DestroyPsetPI(P_SET_T pset)
 {
 	setTraverseT(pset, cbftvsDestroyPsetPI, 0, ETM_POSTORDER);
 	setDeleteT(pset);
 	pset = NULL;
 }
 
-int cbftvsSplitSetGroup(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsSplitSetGroup
+ * Description:   Split set group.
+ * Parameters:
+ *      pitem Pointer to each node of a set.
+ *      param Pointer to a size_t[4] array.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsSplitSetGroup(void * pitem, size_t param)
 {
 	size_t k = *(size_t *)P2P_TNODE_BY(pitem)->pdata;
 	P_SET_T psetPI = (P_SET_T)0[(size_t *)param];
@@ -1064,7 +1396,15 @@ int cbftvsSplitSetGroup(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-int cbftvsIsSplittable(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsIsSplittable
+ * Description:   Judge whether a set is able to split.
+ * Parameters:
+ *      pitem Pointer to each node of a set.
+ *      param Pointer to a pointer of STATEGROUP.
+ * Return value:  CBF_CONTINUE and CBF_TERMINATE respectively.
+ */
+static int cbftvsIsSplittable(void * pitem, size_t param)
 {
 	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
 	if (psg->bsplit)
@@ -1076,7 +1416,15 @@ int cbftvsIsSplittable(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
-int cbftvsFillStates(void * pitem, size_t param)
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsFillStates
+ * Description:   Fill state.
+ * Parameters:
+ *      pitem Pointer to each node of a set.
+ *      param Pointer to a size_t[2] array.
+ * Return value:  CBF_CONTINUE only.
+ */
+static int cbftvsFillStates(void * pitem, size_t param)
 {
 	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
 	P_DFA dfar = (P_DFA)0[(size_t *)param];
@@ -1097,7 +1445,16 @@ int cbftvsFillStates(void * pitem, size_t param)
 
 	return CBF_CONTINUE;
 }
-int cbftvsFillImageArray(void * pitem, size_t param)
+
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsFillImageArray
+ * Description:   Fill image array.
+ * Parameters:
+ *      pitem Pointer to each node of a set.
+ *      param Pointer to a size_t[2] array.
+ * Return value:  CBF_CONTINUE and CBF_TERMINATE respectively.
+ */
+static int cbftvsFillImageArray(void * pitem, size_t param)
 {
 	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
 	if (setIsMemberT(psg->pset, &0[(size_t *)param], _grpCBFCompareInteger))
@@ -1108,15 +1465,30 @@ int cbftvsFillImageArray(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
+/* Attention:     This Is An Internal Function. No Interface for Library Users.
+ * Function name: cbftvsPrintPsetPI
+ * Description:   Print set PI.
+ * Parameters:
+ *      pitem Pointer to each node of a set.
+ *      param N/A.
+ * Return value:  CBF_CONTINUE only.
+ */
 int cbftvsPrintPsetPI(void * pitem, size_t param)
 {
 	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
-	printf("PI: bsplit:%d. egs:%d. rep:%d. { ", psg->bsplit, psg->egs, psg->rep);
+	DWC4100(param);
+	printf("PI: bsplit:%d. egs:%d. rep:%zd. { ", psg->bsplit, psg->egs, psg->rep);
 	setTraverseT(psg->pset, cbftvsPrintSet, 0, ETM_INORDER);
 	printf(" }\n");
 	return CBF_CONTINUE;
 }
 
+/* Function name: MinimizeDFA
+ * Description:   Minimize a DFA.
+ * Parameter:
+ *       dfa Pointer to a DFA.
+ * Return value:  New allocated minimized DFA.
+ */
 P_DFA MinimizeDFA(P_DFA dfa)
 {
 	STATEGROUP sgs = { 0 }, sgf = { 0 }, * psg = NULL;
@@ -1238,6 +1610,12 @@ P_DFA MinimizeDFA(P_DFA dfa)
 	return dfar;
 }
 
+/* Function name: DestroyDFA
+ * Description:   Deallocate a DFA.
+ * Parameter:
+ *       dfa Pointer to a DFA.
+ * Return value:  N/A.
+ */
 void DestroyDFA(P_DFA dfa)
 {
 	strDeleteMatrix(dfa);
