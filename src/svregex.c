@@ -1473,7 +1473,7 @@ static int cbftvsFillImageArray(void * pitem, size_t param)
  *      param N/A.
  * Return value:  CBF_CONTINUE only.
  */
-int cbftvsPrintPsetPI(void * pitem, size_t param)
+static int cbftvsPrintPsetPI(void * pitem, size_t param)
 {
 	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
 	DWC4100(param);
