@@ -1,5 +1,5 @@
 A simple regular expression library that compiles regular expressions to DFAs.
-This project needs StoneValley and published under GPLv2 license.
+This project needs StoneValley(https://github.com/coshcage/StoneValley) and published under GPLv2 license.
 Please refernce to the book: Compilers Priciples, Techniques and Tools (Second Edition) by Alfred V. Aho; Monica S. Lam; Ravi Sethi; Jeffrey D. Ullman. Page 173 to 187.
 Compilation Guide:
 Put StoneValley with all the files of this library together in the same directory and compile them.
