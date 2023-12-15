@@ -1,4 +1,35 @@
 A simple regular expression library that compiles regular expressions to DFAs.
 This project needs StoneValley and published under GPLv2 license.
 Please refernce to the book: Compilers Priciples, Techniques and Tools (Second Edition) by Alfred V. Aho; Monica S. Lam; Ravi Sethi; Jeffrey D. Ullman. Page 173 to 187.
+Compilation Guide:
+Put StoneValley with all the files of this library together in the same directory and compile them.
+../StoneValley/src/
+svarray.c
+svatom.c
+svbytree.c
+svctree.c
+svdef.h
+svgraph.c
+svgraph.h
+svgtree.c
+svhash.c
+svhash.h
+svhtree.c
+svlist.c
+svmatrix.c
+svmisc.c
+svqueue.c
+svqueue.h
+svset.c
+svset.h
+svstack.c
+svstack.h
+svstree.c
+svstring.h
+svtree.h
+../Ssvregex/src/
+svregex.c
+svregex.h
+test.c
+$ cc *.c
 Beta version still has bugs. Be careful.
