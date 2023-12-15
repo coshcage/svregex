@@ -27,7 +27,7 @@ svstack.h
 svstree.c
 svstring.h
 svtree.h
-../Ssvregex/src/
+../svregex/src/
 svregex.c
 svregex.h
 test.c
