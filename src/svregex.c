@@ -1219,9 +1219,9 @@ size_t NextStateM(P_DFA dfa, size_t s, wchar_t a)
 		if (NULL != r)
 		{
 			size_t k = (size_t)(r - (size_t *)dfa->arrz.pdata), * l;
-			l = svBinarySearch(&k, dfa->arrz.pdata, dfa->ln, sizeof(size_t) * dfa->col, _cbfcmpSize_t);
+			l = svBinarySearch(&s, dfa->arrz.pdata, dfa->ln, sizeof(size_t) * dfa->col, _cbfcmpSize_t);
 			if (NULL != l)
-				return *(size_t *)strGetValueMatrix(NULL, dfa, s, *l, sizeof(size_t));
+				return *(size_t *)strGetValueMatrix(NULL, dfa, *l, k, sizeof(size_t));
 		}
 	}
 	return 0;
