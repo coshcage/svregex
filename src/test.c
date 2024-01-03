@@ -25,13 +25,13 @@ int main(int argc, char ** argv)
 
 	(void)wscanf(L"%ls", wcs);
 	wprintf(L"%ls\n", wcs);
-	j = *(size_t *)strGetValueMatrix(NULL, dfa, 1, 0, sizeof(size_t));
+
+	j = 1;
 	k = wcslen(wcs);
 	for (i = 0; i < k; ++i)
 	{
 		j = NextStateM(dfa2, j, wcs[i]);
-		strGetValueMatrix(&l, dfa, j, 0, sizeof(size_t));
-		if (l & SIGN)
+		if (j & SIGN)
 		{
 			printf("Match!\n");
 			break;

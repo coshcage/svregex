@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1214230350L01620
+  * File ID:     1022231324A0103241518L01627
   * License:     GPLv2.
   */
 #include <stdio.h>
@@ -1215,13 +1215,20 @@ size_t NextStateM(P_DFA dfa, size_t s, wchar_t a)
 	if (NULL != dfa && s > 0 && s < dfa->ln)
 	{
 		size_t i = a;
+		/* First, we locate to the column of the DFA. */
 		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata, dfa->col, sizeof(size_t), _grpCBFCompareInteger);
 		if (NULL != r)
 		{
 			size_t k = (size_t)(r - (size_t *)dfa->arrz.pdata), * l;
+			/* Second, we locate to the row of the DFA. */
 			l = svBinarySearch(&s, dfa->arrz.pdata, dfa->ln, sizeof(size_t) * dfa->col, _cbfcmpSize_t);
 			if (NULL != l)
-				return *(size_t *)strGetValueMatrix(NULL, dfa, *l, k, sizeof(size_t));
+			{
+				/* Finally, we fetch cell pointer and locate it on the row again. */
+				l = svBinarySearch((l + k), dfa->arrz.pdata, dfa->ln, sizeof(size_t) * dfa->col, _cbfcmpSize_t);
+				if (NULL != l)
+					return *l;
+			}
 		}
 	}
 	return 0;
