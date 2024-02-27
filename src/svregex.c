@@ -1242,7 +1242,7 @@ size_t NextStateM(P_DFA dfa, size_t s, wchar_t a)
  */
 P_DFA CompileRegex2DFA(wchar_t * pwc)
 {
-	size_t i, j = 0;
+	size_t i = 0;
 	P_TNODE_BY pnode;
 	P_DFA dfa = NULL;
 	wchar_t ** ppwc = &pwc;
