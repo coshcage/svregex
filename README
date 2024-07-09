@@ -1,6 +1,9 @@
 A simple regular expression library that compiles regular expressions to DFAs.
+
 This project needs StoneValley(https://github.com/coshcage/StoneValley) and published under GPLv2 license.
-Please refernce to the book: Compilers Priciples, Techniques and Tools (Second Edition) by Alfred V. Aho; Monica S. Lam; Ravi Sethi; Jeffrey D. Ullman. Page 173 to 187.
+
+Please reference to the book: Compilers Principles, Techniques and Tools (Second Edition) by Alfred V. Aho; Monica S. Lam; Ravi Sethi; Jeffrey D. Ullman. Page 173 to 187.
+
 Compilation Guide:
 Put StoneValley with all the files of this library together in the same directory and compile them.
 ../StoneValley/src/
@@ -32,4 +35,66 @@ svregex.c
 svregex.h
 test.c
 $ cc *.c
-Beta version still has bugs. Be careful.
+
+Okay, let's start to explain this regular expression tool in detail.
+For further explanation, Please reference to the book: Compilers Principles, Techniques and Tools (Second Edition) by Alfred V. Aho; Monica S. Lam; Ravi Sethi; Jeffrey D. Ullman. Page 173 to 187.
+The svregex tool is most like a small compiler that compiles regular expressions to DFAs. It has a lexical analyzer, a syntax analyzer(aka: parser) and a DFA producer.
+Notice that function "Splitter" is its lexer, and function "Parse" is its parser. The rest part of functions results its DFA producer.
+First, svregex uses Dijkstra's two stack algorithm to treat basic regular expressions. Let me illustrate Dijkstra's two stack algorithm here:
+1.While there are still items to read
+	1.Get the next item
+	2.If the item is:
+		1.A number: push it onto the value stack.
+		2.A left parenthesis: push it onto the operator stack.
+		3.A right parenthesis:
+			1.While the top of the operator stack is not a left parenthesis
+				1.Pop the operator from the operator stack.
+				2.Pop the value stack twice, getting two operands.
+				3.Apply the operator to the operands, in the correct order.
+				4.Push the result onto the value stack.
+			2.Pop the left parenthesis from the operator stack
+		4.An operator op:
+			1.While the operator stack is not empty, and the top of the operator stack has the same or greater precedence as op,
+				1.Pop the operator from the operator stack.
+				2.Pop the value stack twice, getting two operands.
+				3.Apply the operator to the operands, in the correct order.
+				4.Push the result onto the value stack.
+			2.Push op onto the operator stack.
+2.While the operator stack is not empty,
+	1.Pop the operator from the operator stack.
+	2.Pop the value stack twice, getting two operands.
+	3.Apply the operator to the operands, in the correct order.
+	4.Push the result onto the value stack.
+3.At this point the operator stack should be empty, and the value stack should have only one value in it, which is the final result.
+The svregex tool uses the above algorithm to build an expression tree. The finial element in the operator stack is the root node of syntax tree.
+Suppose we have an regular expression "(a|b)*.a.b.b" which "." is the concatenate operator and | and * is operators respectively.
+The syntax tree will be:
+		      {1,2,3} . {6}
+                     / \
+                    /{6} # {6}
+        	{1,2,3} . {5}
+                  / \
+                 /{5} b {5}
+        {1,2,3} . {4}
+	           / \
+              /{4} b {4}      
+     {1,2,3} . {3}
+            / \
+		   /{3} a {3}
+	      /
+   {1,2} * {1,2}
+		 |
+   {1,2} | {1,2}
+         ^
+        / \
+       /   \
+      /     \
+     /       \
+    |         |
+{1} a {1} {2} b {2}
+Then, svregex tool traverses on this syntax tree and fill nullable, firstpos and lastpos sets for the regular expression. You may reference to Figure 3.58 of the above dragon book to know the principle to build these sets.
+The next procedure is to calculate the followpos table. For each status 1, 2, 3, 4, 5 and 6 we have 5 sets for 1 to 5. Notice that status 6 is the final status.
+Then we need reference to dragon book Figure 3.62 and implement this algorithm to build an DFA. Before that we need a table called leaf node table.
+Leaf node table is a image that describes status of followpos to characters in syntax tree. Which is 1-a, 2-b, 3-a, 4-b, 5-b, 6-#.
+We traverse leaf node table and followpos table and the syntax tree to build set Dstates.
+Finially we got a DFA. This DFA could be further minimized. 
