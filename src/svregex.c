@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression module.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1225240718L01632
+  * File ID:     1022231324A1225240817L01625
   * License:     GPLv2.
   */
 #include <stdio.h>
@@ -1148,16 +1148,9 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 			printf("\n");
 			PrintDFA(dfa);
 #endif
-			if (NULL != u1)
-			{
-				setDeleteT(u1);
-				u1 = NULL;
-			}
 			if (NULL != u2)
-			{
 				setDeleteT(u2);
-				u2 = NULL;
-			}
+			
 			u2 = setCreateT();
 		}
 		setDeleteT(u2);

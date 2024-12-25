@@ -41,3 +41,4 @@ int main(int argc, char ** argv)
 	DestroyDFA(dfa);
 	DestroyDFA(dfa2);
 }
+
