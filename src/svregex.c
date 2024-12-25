@@ -1,8 +1,8 @@
  /*
   * Name:        svregex.c
-  * Description: SV Regular Expression.
+  * Description: SV Regular Expression module.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A0103241518L01627
+  * File ID:     1022231324A1225240718L01632
   * License:     GPLv2.
   */
 #include <stdio.h>
@@ -1153,6 +1153,11 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 				setDeleteT(u1);
 				u1 = NULL;
 			}
+			if (NULL != u2)
+			{
+				setDeleteT(u2);
+				u2 = NULL;
+			}
 			u2 = setCreateT();
 		}
 		setDeleteT(u2);
@@ -1624,3 +1629,4 @@ void DestroyDFA(P_DFA dfa)
 {
 	strDeleteMatrix(dfa);
 }
+
