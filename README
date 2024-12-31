@@ -7,29 +7,10 @@ Please reference to the book: Compilers Principles, Techniques and Tools (Second
 Compilation Guide:
 Put StoneValley with all the files of this library together in the same directory and compile them.
 ../StoneValley/src/
-svarray.c
-svatom.c
-svbytree.c
-svctree.c
-svdef.h
-svgraph.c
-svgraph.h
-svgtree.c
-svhash.c
-svhash.h
-svhtree.c
-svlist.c
-svmatrix.c
-svmisc.c
-svqueue.c
-svqueue.h
-svset.c
-svset.h
-svstack.c
-svstack.h
-svstree.c
-svstring.h
-svtree.h
+svarray.c   svdef.h    svhash.c   svmatrix.c  svset.c    svstree.c
+svatom.c    svgraph.c  svhash.h   svmisc.c    svset.h    svstring.h
+svbytree.c  svgraph.h  svhtree.c  svqueue.c   svstack.c  svtree.h
+svctree.c   svgtree.c  svlist.c   svqueue.h   svstack.h
 ../svregex/src/
 svregex.c
 svregex.h
