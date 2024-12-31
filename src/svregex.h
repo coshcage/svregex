@@ -12,7 +12,7 @@
 #include <limits.h>
 #include "svstring.h"
 
-#define SIGN (1ULL << (sizeof(size_t) * CHAR_BIT - 1))
+#define SIGN ((size_t)1 << (sizeof(size_t) * CHAR_BIT - 1))
 
  /* This following macro is to adjust syntax tree's style. */
 #define TREE_NODE_SPACE_COUNT 10

@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression module.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1225240817L01625
+  * File ID:     1022231324A1231241255L01641
   * License:     GPLv2.
   */
 #include <stdio.h>
@@ -591,9 +591,9 @@ static P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 				}
 			}
 		}
-	} while (WEOF != (BOOL)lex.ch);
+	} while (WEOF != (int)lex.ch);
 
-	for (;;)
+	for ( ;; )
 	{
 		if (!stkIsEmptyL(&stkOperator))
 		{
@@ -1244,6 +1244,22 @@ P_DFA CompileRegex2DFA(wchar_t * pwc)
 	P_TNODE_BY pnode;
 	P_DFA dfa = NULL;
 	wchar_t ** ppwc = &pwc;
+	wchar_t * p;
+	
+	/* Preprocessing.
+	 * Avoid ** || .. ()
+	 */
+	if (wcsstr(pwc, L"**"))
+		return NULL;
+	if (wcsstr(pwc, L".."))
+		return NULL;
+	if (wcsstr(pwc, L"||"))
+		return NULL;
+	p = wcsstr(pwc, L"()");
+	if (p && p == pwc)
+		return NULL;
+	else if (p && p[-1] != L'\\')
+		return NULL;
 
 	pnode = Parse(ppwc, &i);
 	if (NULL != pnode)
