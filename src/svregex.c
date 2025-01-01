@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression module.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1231241255L01641
+  * File ID:     1022231324A1231241255L01625
   * License:     GPLv2.
   */
 #include <stdio.h>
@@ -801,12 +801,12 @@ static int cbftvsConstructLeafNodeTable(void * pitem, size_t param)
 	P_TNODE_BY pnode = P2P_TNODE_BY(pitem);
 
 	if
-		(
-			NULL == pnode->ppnode[LEFT] &&
-			NULL == pnode->ppnode[RIGHT] &&
-			'\0' != ((P_LEXICON)pnode->pdata)->ch
-			&& WEOF != (BOOL)((P_LEXICON)pnode->pdata)->ch
-			)
+	(
+		NULL == pnode->ppnode[LEFT] &&
+		NULL == pnode->ppnode[RIGHT] &&
+		'\0' != ((P_LEXICON)pnode->pdata)->ch
+		&& WEOF != (BOOL)((P_LEXICON)pnode->pdata)->ch
+	)
 	{
 		(*(P_LVFNDTBL *)param)->ch = ((P_LEXICON)pnode->pdata)->ch;
 		(*(P_LVFNDTBL *)param)->i = *(size_t *)(*((P_SET_T)((P_LEXICON)pnode->pdata)->firstpos))->knot.pdata;
@@ -1244,22 +1244,6 @@ P_DFA CompileRegex2DFA(wchar_t * pwc)
 	P_TNODE_BY pnode;
 	P_DFA dfa = NULL;
 	wchar_t ** ppwc = &pwc;
-	wchar_t * p;
-	
-	/* Preprocessing.
-	 * Avoid ** || .. ()
-	 */
-	if (wcsstr(pwc, L"**"))
-		return NULL;
-	if (wcsstr(pwc, L".."))
-		return NULL;
-	if (wcsstr(pwc, L"||"))
-		return NULL;
-	p = wcsstr(pwc, L"()");
-	if (p && p == pwc)
-		return NULL;
-	else if (p && p[-1] != L'\\')
-		return NULL;
 
 	pnode = Parse(ppwc, &i);
 	if (NULL != pnode)
