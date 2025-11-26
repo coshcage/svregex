@@ -30,7 +30,7 @@ typedef struct st_Lexicon
 {
 	TERMINATOR type;
 	wchar_t    ch;       /* Character. */
-	BOOL       nullable;
+	bool       nullable;
 	P_SET_T    firstpos;
 	P_SET_T    lastpos;
 } LEXICON, * P_LEXICON;
@@ -63,7 +63,7 @@ typedef struct st_STATEGROUP
 {
 	P_SET_T    pset;
 	size_t     rep;
-	BOOL       bsplit;
+	bool       bsplit;
 	GROUPSTATE egs;
 } STATEGROUP, * P_STATEGROUP;
 
@@ -78,7 +78,7 @@ STACK_L stkOperator; /* Operator stack. */
  *        pbt Pointer to a boolean variable that is used to store converting state.
  * Return value:  A LEXICON structure.
  */
-static LEXICON Splitter(wchar_t ** pwc, BOOL * pbt)
+static LEXICON Splitter(wchar_t ** pwc, bool * pbt)
 {
 	wchar_t wc;
 	LEXICON lex = { 0 };
@@ -92,7 +92,7 @@ static LEXICON Splitter(wchar_t ** pwc, BOOL * pbt)
 	if (L'\\' == lex.ch)
 	{
 		*pbt = !*pbt;
-		if (FALSE == *pbt)
+		if (false == *pbt)
 			lex.type = T_Character;
 		else
 			lex.type = T_Jumpover;
@@ -106,42 +106,42 @@ static LEXICON Splitter(wchar_t ** pwc, BOOL * pbt)
 			case L'e':	/* Epsilon. */
 				lex.ch = L'\0';
 				lex.type = T_Character;
-				*pbt = FALSE;
+				*pbt = false;
 				break;
 			case L'n':	/* New line. */
 				lex.ch = L'\n';
 				lex.type = T_Character;
-				*pbt = FALSE;
+				*pbt = false;
 				break;
 			case L't':	/* Table. */
 				lex.ch = L'\t';
 				lex.type = T_Character;
-				*pbt = FALSE;
+				*pbt = false;
 				break;
 			case L'a':	/* Alarm. */
 				lex.ch = L'\a';
 				lex.type = T_Character;
-				*pbt = FALSE;
+				*pbt = false;
 				break;
 			case L'r':	/* Return. */
 				lex.ch = L'\r';
 				lex.type = T_Character;
-				*pbt = FALSE;
+				*pbt = false;
 				break;
 			case L'v': /* Vertical table. */
 				lex.ch = L'\v';
 				lex.type = T_Character;
-				*pbt = FALSE;
+				*pbt = false;
 				break;
 			case L'f':	/* Form feed. */
 				lex.ch = L'\f';
 				lex.type = T_Character;
-				*pbt = FALSE;
+				*pbt = false;
 				break;
 			case L'b':	/* Back space. */
 				lex.ch = L'\b';
 				lex.type = T_Character;
-				*pbt = FALSE;
+				*pbt = false;
 				break;
 			case L'.':	/* Operators. */
 			case L'|':
@@ -149,14 +149,14 @@ static LEXICON Splitter(wchar_t ** pwc, BOOL * pbt)
 			case L'(':
 			case L')':
 				lex.type = T_Character;
-				*pbt = FALSE;
+				*pbt = false;
 				break;
 			default:
 				lex.type = T_Character;
-				*pbt = FALSE;
+				*pbt = false;
 			}
 		}
-		else /* if FALSE == bt. */
+		else /* if false == bt. */
 		{
 			switch (lex.ch)
 			{
@@ -213,7 +213,7 @@ static void PrintLexicon(LEXICON lex)
 	switch (lex.type)
 	{
 	case T_Character:
-		if (WEOF == (BOOL)lex.ch)
+		if (WEOF == (bool)lex.ch)
 			wprintf(L"CHAR: \'(#)\'  ");
 		else if (L'\0' == lex.ch)
 			wprintf(L"CHAR: \'\\e\' ");
@@ -239,7 +239,7 @@ static void PrintLexicon(LEXICON lex)
 		wprintf(L"Jump ");
 		break;
 	}
-	wprintf(L"nulabl:%ls {", lex.nullable ? L"TRUE" : L"FALSE");
+	wprintf(L"nulabl:%ls {", lex.nullable ? L"true" : L"false");
 	setTraverseT(p, cbftvsPrintSet, 0, ETM_INORDER);
 	wprintf(L"} {");
 	setTraverseT(q, cbftvsPrintSet, 0, ETM_INORDER);
@@ -357,7 +357,7 @@ static int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 			break;
 		case T_Closure:
 			/* Nullable. */
-			((P_LEXICON)pnode->pdata)->nullable = TRUE;
+			((P_LEXICON)pnode->pdata)->nullable = true;
 
 			/* Firstpos. */
 			((P_LEXICON)pnode->pdata)->firstpos =
@@ -426,7 +426,7 @@ static void DestroySyntaxTree(P_TNODE_BY pnode)
  */
 static P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 {
-	BOOL bt = FALSE;
+	bool bt = false;
 	size_t posCtr = 1;
 	LEXICON lex = { 0 }, tl = { 0 }, ttl = { 0 };
 	P_TNODE_BY pnode, pnode1, pnode2, pnode3;
@@ -500,7 +500,7 @@ static P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 					else
 						lex.firstpos = NULL;
 
-					lex.nullable = L'\0' == lex.ch ? TRUE : FALSE;
+					lex.nullable = L'\0' == lex.ch ? true : false;
 
 					pnode = strCreateNodeD(&lex, sizeof(LEXICON));
 					stkPushL(&stkOperand, &pnode, sizeof(P_TNODE_BY));
@@ -784,7 +784,7 @@ static int cbftvsClearSetT(void * pitem, size_t param)
  */
 static void DestroyFollowposArray(P_ARRAY_Z parr)
 {
-	strTraverseArrayZ(parr, sizeof(P_SET_T), cbftvsClearSetT, 0, FALSE);
+	strTraverseArrayZ(parr, sizeof(P_SET_T), cbftvsClearSetT, 0, false);
 	strDeleteArrayZ(parr);
 }
 
@@ -805,7 +805,7 @@ static int cbftvsConstructLeafNodeTable(void * pitem, size_t param)
 		NULL == pnode->ppnode[LEFT] &&
 		NULL == pnode->ppnode[RIGHT] &&
 		'\0' != ((P_LEXICON)pnode->pdata)->ch
-		&& WEOF != (BOOL)((P_LEXICON)pnode->pdata)->ch
+		&& WEOF != (bool)((P_LEXICON)pnode->pdata)->ch
 	)
 	{
 		(*(P_LVFNDTBL *)param)->ch = ((P_LEXICON)pnode->pdata)->ch;
@@ -905,7 +905,7 @@ static int cbftvsFillDFAHeader(void * pitem, size_t param)
  */
 static int cbftvsFindUnmarked(void * pitem, size_t param)
 {
-	if (TRUE != ((P_DSTATES)(P2P_TNODE_BY(pitem)->pdata))->mark)
+	if (true != ((P_DSTATES)(P2P_TNODE_BY(pitem)->pdata))->mark)
 	{
 		*(P_DSTATES *)param = (P_DSTATES)(P2P_TNODE_BY(pitem)->pdata);
 		return CBF_TERMINATE;
@@ -926,7 +926,7 @@ static int cbftvsCmpTwoSets(void * pitem, size_t param)
 	if (setIsEqualT(((P_DSTATES)P2P_TNODE_BY(pitem)->pdata)->pset, (P_SET_T)0[(size_t *)param], _grpCBFCompareInteger))
 	{
 		1[(size_t *)param] = ((P_DSTATES)P2P_TNODE_BY(pitem)->pdata)->label;
-		2[(size_t *)param] = TRUE;
+		2[(size_t *)param] = true;
 		return CBF_TERMINATE;
 	}
 	return CBF_CONTINUE;
@@ -1050,7 +1050,7 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 		size_t * p;
 		pset = setCreateT();
 
-		strTraverseArrayZ(parlvfndtbl, sizeof(LVFNDTBL), cbftvsCompressInputSymbols, (size_t)pset, FALSE);
+		strTraverseArrayZ(parlvfndtbl, sizeof(LVFNDTBL), cbftvsCompressInputSymbols, (size_t)pset, false);
 
 		dfa = strCreateMatrix(2, treArityBY(P2P_TNODE_BY(*pset)) + 1, sizeof(size_t));
 
@@ -1066,7 +1066,7 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 	psetDstates = setCreateT();
 
 	d.pset = setCopyT(((P_LEXICON)proot->pdata)->firstpos, sizeof(size_t));
-	d.mark = FALSE;
+	d.mark = false;
 	d.label = m;
 	++m;
 
@@ -1083,7 +1083,7 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 		size_t a[3];
 		size_t i, j, k;
 		P_SET_T u1 = NULL, u2 = setCreateT();
-		pd->mark = TRUE;
+		pd->mark = true;
 
 		for (i = 1; i < dfa->col; ++i)
 		{
@@ -1112,7 +1112,7 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 			/* Whether u1 is not in Dstates. */
 			a[0] = (size_t)u1;
 			a[1] = pd->label;
-			a[2] = FALSE;
+			a[2] = false;
 
 #ifdef DEBUG
 			PrintDstates(psetDstates);
@@ -1120,11 +1120,11 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 			if (NULL != u1)
 				setTraverseT(psetDstates, cbftvsCmpTwoSets, (size_t)a, ETM_LEVELORDER);
 			else
-				a[2] = TRUE;
-			if (FALSE == a[2])
+				a[2] = true;
+			if (false == a[2])
 			{
 				d.pset = setIsEmptyT(u1) ? setCreateT() : setCopyT(u1, sizeof(size_t));
-				d.mark = FALSE;
+				d.mark = false;
 				d.label = m;
 				++m;
 
@@ -1256,12 +1256,12 @@ P_DFA CompileRegex2DFA(wchar_t * pwc)
 
 		parrfollowpos = CreateFollowPosArray(pnode, i);
 #ifdef DEBUG
-		strTraverseArrayZ(parrfollowpos, sizeof(P_SET_T), cbftvsPrintFollowposArray, (size_t)&j, FALSE);
+		strTraverseArrayZ(parrfollowpos, sizeof(P_SET_T), cbftvsPrintFollowposArray, (size_t)&j, false);
 #endif
 
 		parrlvfndtbl = ConstructLeafNodeTable(pnode, i);
 #ifdef DEBUG
-		strTraverseArrayZ(parrlvfndtbl, sizeof(LVFNDTBL), cbftvsPrintLeafNodeTable, 0, FALSE);
+		strTraverseArrayZ(parrlvfndtbl, sizeof(LVFNDTBL), cbftvsPrintLeafNodeTable, 0, false);
 #endif
 		
 		dfa = ConstructDFA(parrfollowpos, parrlvfndtbl, pnode, i);
@@ -1340,7 +1340,7 @@ static int cbftvsSplitSetGroup(void * pitem, size_t param)
 	P_SET_T psetEND = (P_SET_T)3[(size_t *)param];
 
 	size_t i, j, l;
-	BOOL bfound = FALSE;
+	bool bfound = false;
 
 	for (i = 1; i < dfa->col; ++i)
 	{
@@ -1358,7 +1358,7 @@ static int cbftvsSplitSetGroup(void * pitem, size_t param)
 			{
 				STATEGROUP sg;
 				sg.pset = setCreateT();
-				sg.bsplit = FALSE;
+				sg.bsplit = false;
 				sg.rep = k;
 
 				/* Alter psg->egs. */
@@ -1386,14 +1386,14 @@ static int cbftvsSplitSetGroup(void * pitem, size_t param)
 					psg->rep = l;
 				}
 
-				bfound = TRUE;
+				bfound = true;
 				break;
 			}
 		}
 	}
 	if (treArityBY(P2P_TNODE_BY(*psg->pset)) > 1)
-		if (FALSE == bfound)
-			psg->bsplit = FALSE;
+		if (false == bfound)
+			psg->bsplit = false;
 
 	return CBF_CONTINUE;
 }
@@ -1504,7 +1504,7 @@ P_DFA MinimizeDFA(P_DFA dfa)
 	psetPI = setCreateT();
 	psetEND = setCreateT();
 	
-	sgs.bsplit = sgf.bsplit = TRUE;
+	sgs.bsplit = sgf.bsplit = true;
 
 	sgs.egs = EGS_START;
 	sgf.egs = EGS_END;
@@ -1545,7 +1545,7 @@ P_DFA MinimizeDFA(P_DFA dfa)
 		a[3] = (size_t)psetEND;
 
 		if (treArityBY(P2P_TNODE_BY(*psg->pset)) <= 1)
-			psg->bsplit = FALSE;
+			psg->bsplit = false;
 
 		if (psg->bsplit)
 			setTraverseT(psg->pset, cbftvsSplitSetGroup, (size_t)a, ETM_POSTORDER); /* Must be post-order. */
