@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression module.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1231241255L01625
+  * File ID:     1022231324A1227250726L01625
   * License:     GPLv2.
   */
 #include <stdio.h>
@@ -213,7 +213,7 @@ static void PrintLexicon(LEXICON lex)
 	switch (lex.type)
 	{
 	case T_Character:
-		if (WEOF == (bool)lex.ch)
+		if (WEOF == (wint_t)lex.ch)
 			wprintf(L"CHAR: \'(#)\'  ");
 		else if (L'\0' == lex.ch)
 			wprintf(L"CHAR: \'\\e\' ");
@@ -591,7 +591,7 @@ static P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 				}
 			}
 		}
-	} while (WEOF != (int)lex.ch);
+	} while (WEOF != (wint_t)lex.ch);
 
 	for ( ;; )
 	{
@@ -805,7 +805,7 @@ static int cbftvsConstructLeafNodeTable(void * pitem, size_t param)
 		NULL == pnode->ppnode[LEFT] &&
 		NULL == pnode->ppnode[RIGHT] &&
 		'\0' != ((P_LEXICON)pnode->pdata)->ch
-		&& WEOF != (bool)((P_LEXICON)pnode->pdata)->ch
+		&& WEOF != (int)((P_LEXICON)pnode->pdata)->ch
 	)
 	{
 		(*(P_LVFNDTBL *)param)->ch = ((P_LEXICON)pnode->pdata)->ch;
