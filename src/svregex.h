@@ -14,7 +14,7 @@
 
 #define SIGN ((size_t)1 << (sizeof(size_t) * CHAR_BIT - 1))
 
- /* This following macro is to adjust syntax tree's style. */
+/* This following macro is to adjust syntax tree's style. */
 #define TREE_NODE_SPACE_COUNT 10
 
 typedef P_MATRIX P_DFA; /* Redefine P_MATRIX. */

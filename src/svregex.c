@@ -156,7 +156,7 @@ static LEXICON Splitter(wchar_t ** pwc, bool * pbt)
 				*pbt = false;
 			}
 		}
-		else /* if false == bt. */
+		else /* if false == *pbt. */
 		{
 			switch (lex.ch)
 			{
