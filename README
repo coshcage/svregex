@@ -76,7 +76,7 @@ The syntax tree will be:
 Then, svregex tool traverses on this syntax tree and fill nullable, firstpos and lastpos sets for the regular expression. You may reference to Figure 3.58 of the above dragon book to know the principle to build these sets.
 The next procedure is to calculate the followpos table. For each status 1, 2, 3, 4, 5 and 6 we have 5 sets for 1 to 5. Notice that status 6 is the final status.
 Then we need reference to dragon book Figure 3.62 and implement this algorithm to build an DFA. Before that we need a table called leaf node table.
-Leaf node table is a image that describes status of followpos to characters in syntax tree. Which is 1-a, 2-b, 3-a, 4-b, 5-b, 6-#.
+Leaf node table is an image that describes status of followpos to characters in syntax tree. Which is 1-a, 2-b, 3-a, 4-b, 5-b, 6-#.
 We traverse leaf node table and followpos table and the syntax tree to build set Dstates.
 Finially we got a DFA. This DFA could be further minimized.
 
