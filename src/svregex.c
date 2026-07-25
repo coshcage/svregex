@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression module.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A1227250726L01625
+  * File ID:     1022231324A0725261627L01625
   * License:     GPLv2.
   */
 #include <stdio.h>
@@ -337,7 +337,7 @@ static int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 			else
 				((P_LEXICON)pnode->pdata)->firstpos =
 				NULL != ((P_LEXICON)pnode->ppnode[LEFT]->pdata)->firstpos ?
-				setCopyT(((P_LEXICON)pnode->ppnode[LEFT]->pdata)->firstpos, sizeof(size_t)) :
+				setCreateCopyT(((P_LEXICON)pnode->ppnode[LEFT]->pdata)->firstpos, sizeof(size_t)) :
 				NULL;
 
 			/* Lastpos. */
@@ -352,7 +352,7 @@ static int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 			else
 				((P_LEXICON)pnode->pdata)->lastpos =
 				NULL != ((P_LEXICON)pnode->ppnode[RIGHT]->pdata)->lastpos ?
-				setCopyT(((P_LEXICON)pnode->ppnode[RIGHT]->pdata)->lastpos, sizeof(size_t)) :
+				setCreateCopyT(((P_LEXICON)pnode->ppnode[RIGHT]->pdata)->lastpos, sizeof(size_t)) :
 				NULL;
 			break;
 		case T_Closure:
@@ -362,13 +362,13 @@ static int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 			/* Firstpos. */
 			((P_LEXICON)pnode->pdata)->firstpos =
 				NULL != ((P_LEXICON)pnode->ppnode[LEFT]->pdata)->firstpos ?
-				setCopyT(((P_LEXICON)pnode->ppnode[LEFT]->pdata)->firstpos, sizeof(size_t)) :
+				setCreateCopyT(((P_LEXICON)pnode->ppnode[LEFT]->pdata)->firstpos, sizeof(size_t)) :
 				NULL;
 
 			/* Lastpos. */
 			((P_LEXICON)pnode->pdata)->lastpos =
 				NULL != ((P_LEXICON)pnode->ppnode[LEFT]->pdata)->lastpos ?
-				setCopyT(((P_LEXICON)pnode->ppnode[LEFT]->pdata)->lastpos, sizeof(size_t)) :
+				setCreateCopyT(((P_LEXICON)pnode->ppnode[LEFT]->pdata)->lastpos, sizeof(size_t)) :
 				NULL;
 			break;
 		case T_LeftBracket:
@@ -1065,7 +1065,7 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 	}
 	psetDstates = setCreateT();
 
-	d.pset = setCopyT(((P_LEXICON)proot->pdata)->firstpos, sizeof(size_t));
+	d.pset = setCreateCopyT(((P_LEXICON)proot->pdata)->firstpos, sizeof(size_t));
 	d.mark = false;
 	d.label = m;
 	++m;
@@ -1123,7 +1123,7 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 				a[2] = true;
 			if (false == a[2])
 			{
-				d.pset = setIsEmptyT(u1) ? setCreateT() : setCopyT(u1, sizeof(size_t));
+				d.pset = setIsEmptyT(u1) ? setCreateT() : setCreateCopyT(u1, sizeof(size_t));
 				d.mark = false;
 				d.label = m;
 				++m;
