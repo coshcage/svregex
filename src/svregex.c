@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression module.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A0725261627L01625
+  * File ID:     1022231324A0726260330L01630
   * License:     GPLv2.
   */
 #include <stdio.h>
@@ -826,7 +826,7 @@ static int cbftvsConstructLeafNodeTable(void * pitem, size_t param)
  */
 static P_ARRAY_Z ConstructLeafNodeTable(P_TNODE_BY pnode, size_t inodes)
 {
-	P_ARRAY_Z parr = strCreateArrayZ(inodes - 1, sizeof(LVFNDTBL));
+	P_ARRAY_Z parr = strCreateArrayZ(inodes, sizeof(LVFNDTBL));
 	P_LVFNDTBL pl = (P_LVFNDTBL)strLocateItemArrayZ(parr, sizeof(LVFNDTBL), 0);
 
 	treTraverseBYPost(pnode, cbftvsConstructLeafNodeTable, (size_t)&pl);
@@ -1115,9 +1115,10 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 			a[2] = false;
 
 #ifdef DEBUG
-			PrintDstates(psetDstates);
-#endif
-			if (NULL != u1)
+			printf("%p\n", u1);
+#endif		
+			
+			if (NULL != u1 && ! setIsEmptyT(u1))
 				setTraverseT(psetDstates, cbftvsCmpTwoSets, (size_t)a, ETM_LEVELORDER);
 			else
 				a[2] = true;
@@ -1149,7 +1150,11 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 			PrintDFA(dfa);
 #endif
 			if (NULL != u2)
+			{
+				if (u1 == u2)
+					u1 = NULL;
 				setDeleteT(u2);
+			}
 			
 			u2 = setCreateT();
 		}
@@ -1603,7 +1608,7 @@ P_DFA MinimizeDFA(P_DFA dfa)
 		}
 	}
 
-	svQuickSort(dfar->arrz.pdata + sizeof(size_t) * dfar->col * 2, dfar->ln - 2, sizeof(size_t) * dfar->col, _cbfcmpSize_t);
+	svMergeSort(dfar->arrz.pdata + sizeof(size_t) * dfar->col * 2, dfar->ln - 2, sizeof(size_t) * dfar->col, _cbfcmpSize_t);
 
 	DestroyPsetPI(psetPI);
 	setDeleteT(psetEND);
