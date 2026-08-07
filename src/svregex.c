@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression module.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A0726260330L01630
+  * File ID:     1022231324A0806262208L01637
   * License:     GPLv2.
   */
 #include <stdio.h>
@@ -29,7 +29,7 @@ typedef enum en_Terminator
 typedef struct st_Lexicon
 {
 	TERMINATOR type;
-	wchar_t    ch;       /* Character. */
+	wchar_t    wch;     /* Character. */
 	bool       nullable;
 	P_SET_T    firstpos;
 	P_SET_T    lastpos;
@@ -46,7 +46,7 @@ typedef struct st_DStates
 /* Leaf node table. */
 typedef struct st_LVFNDTBL
 {
-	wchar_t ch;
+	wchar_t wch;
 	size_t  i;
 } LVFNDTBL, * P_LVFNDTBL;
 
@@ -67,8 +67,8 @@ typedef struct st_STATEGROUP
 	GROUPSTATE egs;
 } STATEGROUP, * P_STATEGROUP;
 
-STACK_L stkOperand;  /* Operand stack. */
-STACK_L stkOperator; /* Operator stack. */
+static STACK_L stkOperand;  /* Operand stack. */
+static STACK_L stkOperator; /* Operator stack. */
 
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: Splitter
@@ -87,9 +87,9 @@ static LEXICON Splitter(wchar_t ** pwc, bool * pbt)
 	if (L'\0' == wc)
 		wc = WEOF;
 
-	lex.ch = wc;
+	lex.wch = wc;
 
-	if (L'\\' == lex.ch)
+	if (L'\\' == lex.wch)
 	{
 		*pbt = !*pbt;
 		if (false == *pbt)
@@ -101,45 +101,45 @@ static LEXICON Splitter(wchar_t ** pwc, bool * pbt)
 	{
 		if (*pbt)
 		{
-			switch (lex.ch)
+			switch (lex.wch)
 			{
 			case L'e':	/* Epsilon. */
-				lex.ch = L'\0';
+				lex.wch = L'\0';
 				lex.type = T_Character;
 				*pbt = false;
 				break;
 			case L'n':	/* New line. */
-				lex.ch = L'\n';
+				lex.wch = L'\n';
 				lex.type = T_Character;
 				*pbt = false;
 				break;
 			case L't':	/* Table. */
-				lex.ch = L'\t';
+				lex.wch = L'\t';
 				lex.type = T_Character;
 				*pbt = false;
 				break;
 			case L'a':	/* Alarm. */
-				lex.ch = L'\a';
+				lex.wch = L'\a';
 				lex.type = T_Character;
 				*pbt = false;
 				break;
 			case L'r':	/* Return. */
-				lex.ch = L'\r';
+				lex.wch = L'\r';
 				lex.type = T_Character;
 				*pbt = false;
 				break;
 			case L'v': /* Vertical table. */
-				lex.ch = L'\v';
+				lex.wch = L'\v';
 				lex.type = T_Character;
 				*pbt = false;
 				break;
 			case L'f':	/* Form feed. */
-				lex.ch = L'\f';
+				lex.wch = L'\f';
 				lex.type = T_Character;
 				*pbt = false;
 				break;
 			case L'b':	/* Back space. */
-				lex.ch = L'\b';
+				lex.wch = L'\b';
 				lex.type = T_Character;
 				*pbt = false;
 				break;
@@ -158,7 +158,7 @@ static LEXICON Splitter(wchar_t ** pwc, bool * pbt)
 		}
 		else /* if false == *pbt. */
 		{
-			switch (lex.ch)
+			switch (lex.wch)
 			{
 			case L'.':
 				lex.type = T_Concatenate;
@@ -193,8 +193,8 @@ static LEXICON Splitter(wchar_t ** pwc, bool * pbt)
  */
 static int cbftvsPrintSet(void * pitem, size_t param)
 {
-	DWC4100(param);
-	wprintf(L"%zd, ", *(size_t *)(P2P_TNODE_BY(pitem)->pdata));
+	DISUSE(param);
+	printf("%zd, ", *(size_t *)(P2P_TNODE_BY(pitem)->pdata));
 	return CBF_CONTINUE;
 }
 
@@ -213,12 +213,12 @@ static void PrintLexicon(LEXICON lex)
 	switch (lex.type)
 	{
 	case T_Character:
-		if (WEOF == (wint_t)lex.ch)
+		if (WEOF == (wint_t)lex.wch)
 			wprintf(L"CHAR: \'(#)\'  ");
-		else if (L'\0' == lex.ch)
+		else if (L'\0' == lex.wch)
 			wprintf(L"CHAR: \'\\e\' ");
 		else
-			wprintf(L"CHAR: \'%c\' ", lex.ch);
+			wprintf(L"CHAR: \'%c\' ", lex.wch);
 		break;
 	case T_Selection:
 		wprintf(L"| ");
@@ -274,9 +274,6 @@ static void PrintSyntaxTree(P_TNODE_BY pnode, size_t space)
 	PrintSyntaxTree(pnode->ppnode[LEFT], space);
 }
 
-/* Extern function to be invoked. */
-extern int _grpCBFCompareInteger(const void * px, const void * py);
-
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: cbftvsComputeNullableAndPos
  * Description:   Calculate the nullable parameter and POS sets.
@@ -289,7 +286,7 @@ static int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 {
 	P_TNODE_BY pnode = P2P_TNODE_BY(pitem);
 
-	DWC4100(param);
+	DISUSE(param);
 
 	if (NULL != pnode->ppnode[LEFT]) /* pnode is not a leaf node. */
 	{
@@ -307,7 +304,7 @@ static int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 				(
 					((P_LEXICON)pnode->ppnode[LEFT]->pdata)->firstpos,
 					((P_LEXICON)pnode->ppnode[RIGHT]->pdata)->firstpos,
-					sizeof(size_t), _grpCBFCompareInteger
+					sizeof(size_t), svCBFCompareSizeTInteger
 				);
 
 			/* Lastpos. */
@@ -316,7 +313,7 @@ static int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 				(
 					((P_LEXICON)pnode->ppnode[LEFT]->pdata)->lastpos,
 					((P_LEXICON)pnode->ppnode[RIGHT]->pdata)->lastpos,
-					sizeof(size_t), _grpCBFCompareInteger
+					sizeof(size_t), svCBFCompareSizeTInteger
 				);
 			break;
 		case T_Concatenate:
@@ -332,7 +329,7 @@ static int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 				(
 					((P_LEXICON)pnode->ppnode[LEFT]->pdata)->firstpos,
 					((P_LEXICON)pnode->ppnode[RIGHT]->pdata)->firstpos,
-					sizeof(size_t), _grpCBFCompareInteger
+					sizeof(size_t), svCBFCompareSizeTInteger
 				);
 			else
 				((P_LEXICON)pnode->pdata)->firstpos =
@@ -347,7 +344,7 @@ static int cbftvsComputeNullableAndPos(void * pitem, size_t param)
 				(
 					((P_LEXICON)pnode->ppnode[LEFT]->pdata)->lastpos,
 					((P_LEXICON)pnode->ppnode[RIGHT]->pdata)->lastpos,
-					sizeof(size_t), _grpCBFCompareInteger
+					sizeof(size_t), svCBFCompareSizeTInteger
 				);
 			else
 				((P_LEXICON)pnode->pdata)->lastpos =
@@ -393,7 +390,7 @@ static int cbftvsCleanStruct(void * pitem, size_t param)
 {
 	P_LEXICON plex = (P_LEXICON)(P2P_TNODE_BY(pitem)->pdata);
 
-	DWC4100(param);
+	DISUSE(param);
 
 	if (NULL != plex->firstpos)
 		setDeleteT(plex->firstpos);
@@ -489,18 +486,18 @@ static P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 				switch (lex.type)
 				{
 				case T_Character:
-					if (L'\0' != lex.ch)
+					if (L'\0' != lex.wch)
 					{
 						lex.firstpos = setCreateT();
-						setInsertT(lex.firstpos, &posCtr, sizeof(size_t), _grpCBFCompareInteger);
+						setInsertT(lex.firstpos, &posCtr, sizeof(size_t), svCBFCompareSizeTInteger);
 						lex.lastpos = setCreateT();
-						setInsertT(lex.lastpos, &posCtr, sizeof(size_t), _grpCBFCompareInteger);
+						setInsertT(lex.lastpos, &posCtr, sizeof(size_t), svCBFCompareSizeTInteger);
 						++posCtr;
 					}
 					else
 						lex.firstpos = NULL;
 
-					lex.nullable = L'\0' == lex.ch ? true : false;
+					lex.nullable = L'\0' == lex.wch ? true : false;
 
 					pnode = strCreateNodeD(&lex, sizeof(LEXICON));
 					stkPushL(&stkOperand, &pnode, sizeof(P_TNODE_BY));
@@ -591,7 +588,7 @@ static P_TNODE_BY Parse(wchar_t ** pwc, size_t * pleaves)
 				}
 			}
 		}
-	} while (WEOF != (wint_t)lex.ch);
+	} while (WEOF != (wint_t)lex.wch);
 
 	for ( ;; )
 	{
@@ -665,7 +662,7 @@ static int cbftvsStarTravFirstpos(void * pitem, size_t param)
 	if (NULL == *ppset)
 		*ppset = setCreateT();
 
-	setInsertT(*ppset, (size_t *)P2P_TNODE_BY(pitem)->pdata, sizeof(size_t), _grpCBFCompareInteger);
+	setInsertT(*ppset, (size_t *)P2P_TNODE_BY(pitem)->pdata, sizeof(size_t), svCBFCompareSizeTInteger);
 
 	return CBF_CONTINUE;
 }
@@ -752,9 +749,9 @@ static P_ARRAY_Z CreateFollowPosArray(P_TNODE_BY pnode, size_t inodes)
 static int cbftvsPrintFollowposArray(void * pitem, size_t param)
 {
 	P_SET_T pset = *(P_SET_T *)pitem;
-	wprintf(L"%zd\t{", ++0[(size_t *)param]);
+	printf("%zd\t{", ++0[(size_t *)param]);
 	setTraverseT(pset, cbftvsPrintSet, 0, ETM_INORDER);
-	wprintf(L"}\n");
+	printf("}\n");
 	return CBF_CONTINUE;
 }
 
@@ -768,7 +765,7 @@ static int cbftvsPrintFollowposArray(void * pitem, size_t param)
  */
 static int cbftvsClearSetT(void * pitem, size_t param)
 {
-	DWC4100(param);
+	DISUSE(param);
 	P_SET_T pset = *(P_SET_T *)pitem;
 	if (NULL != pset)
 		setDeleteT(pset);
@@ -802,13 +799,13 @@ static int cbftvsConstructLeafNodeTable(void * pitem, size_t param)
 
 	if
 	(
-		NULL == pnode->ppnode[LEFT] &&
-		NULL == pnode->ppnode[RIGHT] &&
-		'\0' != ((P_LEXICON)pnode->pdata)->ch
-		&& WEOF != (int)((P_LEXICON)pnode->pdata)->ch
+		NULL  == pnode->ppnode[LEFT] &&
+		NULL  == pnode->ppnode[RIGHT] &&
+		L'\0' != ((P_LEXICON)pnode->pdata)->wch &&
+		WEOF  != (wint_t)((P_LEXICON)pnode->pdata)->wch
 	)
 	{
-		(*(P_LVFNDTBL *)param)->ch = ((P_LEXICON)pnode->pdata)->ch;
+		(*(P_LVFNDTBL *)param)->wch = ((P_LEXICON)pnode->pdata)->wch;
 		(*(P_LVFNDTBL *)param)->i = *(size_t *)(*((P_SET_T)((P_LEXICON)pnode->pdata)->firstpos))->knot.pdata;
 		++*(P_LVFNDTBL *)param;
 	}
@@ -826,12 +823,18 @@ static int cbftvsConstructLeafNodeTable(void * pitem, size_t param)
  */
 static P_ARRAY_Z ConstructLeafNodeTable(P_TNODE_BY pnode, size_t inodes)
 {
-	P_ARRAY_Z parr = strCreateArrayZ(inodes, sizeof(LVFNDTBL));
-	P_LVFNDTBL pl = (P_LVFNDTBL)strLocateItemArrayZ(parr, sizeof(LVFNDTBL), 0);
+	if (inodes > 0)
+	{
+		LVFNDTBL t = { 0 };
+		P_ARRAY_Z parr = strCreateArrayZ(inodes, sizeof(LVFNDTBL));
+		P_LVFNDTBL pl = (P_LVFNDTBL)strLocateItemArrayZ(parr, sizeof(LVFNDTBL), 0);
+		
+		strSetArrayZ(parr, &t, sizeof(LVFNDTBL));
+		treTraverseBYPost(pnode, cbftvsConstructLeafNodeTable, (size_t)&pl);
 
-	treTraverseBYPost(pnode, cbftvsConstructLeafNodeTable, (size_t)&pl);
-
-	return parr;
+		return parr;
+	}
+	return NULL;
 }
 
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
@@ -844,9 +847,9 @@ static P_ARRAY_Z ConstructLeafNodeTable(P_TNODE_BY pnode, size_t inodes)
  */
 static int cbftvsPrintLeafNodeTable(void * pitem, size_t param)
 {
-	DWC4100(param);
+	DISUSE(param);
 
-	wprintf(L"%c\t%ld\n", ((P_LVFNDTBL)pitem)->ch, ((P_LVFNDTBL)pitem)->i);
+	wprintf(L"%c\t%ld\n", ((P_LVFNDTBL)pitem)->wch, ((P_LVFNDTBL)pitem)->i);
 
 	return CBF_CONTINUE;
 }
@@ -876,7 +879,8 @@ static int cbfcmpWChar_t(const void * px, const void * py)
  */
 static int cbftvsCompressInputSymbols(void * pitem, size_t param)
 {
-	setInsertT((P_SET_T)param, &(((P_LVFNDTBL)pitem)->ch), sizeof(wchar_t), cbfcmpWChar_t);
+	if (0 != ((P_LVFNDTBL)pitem)->wch)
+		setInsertT((P_SET_T)param, &(((P_LVFNDTBL)pitem)->wch), sizeof(wchar_t), cbfcmpWChar_t);
 	return CBF_CONTINUE;
 }
 
@@ -923,7 +927,7 @@ static int cbftvsFindUnmarked(void * pitem, size_t param)
  */
 static int cbftvsCmpTwoSets(void * pitem, size_t param)
 {
-	if (setIsEqualT(((P_DSTATES)P2P_TNODE_BY(pitem)->pdata)->pset, (P_SET_T)0[(size_t *)param], _grpCBFCompareInteger))
+	if (setIsEqualT(((P_DSTATES)P2P_TNODE_BY(pitem)->pdata)->pset, (P_SET_T)0[(size_t *)param], svCBFCompareSizeTInteger))
 	{
 		1[(size_t *)param] = ((P_DSTATES)P2P_TNODE_BY(pitem)->pdata)->label;
 		2[(size_t *)param] = true;
@@ -941,9 +945,9 @@ static int cbftvsCmpTwoSets(void * pitem, size_t param)
 void PrintDFA(P_DFA pmtx)
 {
 	size_t i, j, k;
-	printf("0\t");
+	printf("\t");
 	for (j = 1; j < pmtx->col; ++j)
-		wprintf(L"%\'%c\'\t", (wchar_t)*(size_t *)strGetValueMatrix(NULL, pmtx, 0, j, sizeof(size_t)));
+		printf("'%c'\t", (char)*(size_t *)strGetValueMatrix(NULL, pmtx, 0, j, sizeof(size_t)));
 	printf("\n");
 	for (i = 1; i < pmtx->ln; ++i)
 	{
@@ -951,9 +955,9 @@ void PrintDFA(P_DFA pmtx)
 		{
 			strGetValueMatrix(&k, pmtx, i, j, sizeof(size_t));
 			if (k & SIGN)
-				printf("*%c\t", (char)((k & (~0UL >> 1)) + 'A' - 1));
+				printf("*%c\t", (char)((k & (~SIGN)) + 'A' - 1));
 			else
-				printf("%c\t", (char)(k + 'A' - 1));
+				printf(" %c\t", (char)(k + 'A' - 1));
 		}
 		printf("\n");
 	}
@@ -970,7 +974,7 @@ void PrintDFA(P_DFA pmtx)
 static int cbftvsDestroyDstates(void * pitem, size_t param)
 {
 	P_DSTATES pd;
-	DWC4100(param);
+	DISUSE(param);
 	pd = (P_DSTATES)P2P_TNODE_BY(pitem)->pdata;
 	if (pd->pset)
 		setDeleteT(pd->pset);
@@ -998,10 +1002,10 @@ static void DestroyDstates(P_SET_T pds)
  *      param N/A.
  * Return value:  CBF_CONTINUE only.
  */
-int cbftvsPrintDstates(void * pitem, size_t param)
+static int cbftvsPrintDstates(void * pitem, size_t param)
 {
 	P_DSTATES pd;
-	DWC4100(param);
+	DISUSE(param);
 	pd = (P_DSTATES)P2P_TNODE_BY(pitem)->pdata;
 	if (pd->pset)
 	{
@@ -1038,7 +1042,7 @@ static void PrintDstates(P_SET_T pset)
  */
 static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_BY proot, size_t iend)
 {
-	P_MATRIX dfa = NULL;
+	P_MATRIX dfa;
 	DSTATES d;
 	P_DSTATES pd;
 	size_t m = 1, n;
@@ -1070,7 +1074,7 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 	d.label = m;
 	++m;
 
-	setInsertT(psetDstates, &d, sizeof(DSTATES), _grpCBFCompareInteger);
+	setInsertT(psetDstates, &d, sizeof(DSTATES), svCBFCompareSizeTInteger);
 
 	n = 1;
 	strSetValueMatrix(dfa, 1, 0, &n, sizeof(size_t));
@@ -1092,12 +1096,12 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 
 			for (j = 0; j < strLevelArrayZ(parlvfndtbl); ++j)
 			{
-				if (((P_LVFNDTBL)strLocateItemArrayZ(parlvfndtbl, sizeof(LVFNDTBL), j))->ch == (wchar_t)iwc)
+				if (((P_LVFNDTBL)strLocateItemArrayZ(parlvfndtbl, sizeof(LVFNDTBL), j))->wch == (wchar_t)iwc)
 				{
 					k = ((P_LVFNDTBL)strLocateItemArrayZ(parlvfndtbl, sizeof(LVFNDTBL), j))->i;
-					if (setIsMemberT(pd->pset, &k, _grpCBFCompareInteger))
+					if (setIsMemberT(pd->pset, &k, svCBFCompareSizeTInteger))
 					{
-						u1 = setCreateUnionT(u2, *(P_SET_T *)strLocateItemArrayZ(parflps, sizeof(P_SET_T), k - 1), sizeof(size_t), _grpCBFCompareInteger);
+						u1 = setCreateUnionT(u2, *(P_SET_T *)strLocateItemArrayZ(parflps, sizeof(P_SET_T), k - 1), sizeof(size_t), svCBFCompareSizeTInteger);
 						setDeleteT(u2);
 						u2 = u1;
 #ifdef DEBUG
@@ -1129,13 +1133,13 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 				d.label = m;
 				++m;
 
-				setInsertT(psetDstates, &d, sizeof(DSTATES), _grpCBFCompareInteger);
+				setInsertT(psetDstates, &d, sizeof(DSTATES), svCBFCompareSizeTInteger);
 				a[1] = d.label;
 
 				strResizeMatrix(dfa, m, dfa->col, sizeof(size_t));
 
 				n = m - 1;
-				if (setIsMemberT(d.pset, &iend, _grpCBFCompareInteger))
+				if (setIsMemberT(d.pset, &iend, svCBFCompareSizeTInteger))
 					n |= SIGN;
 				strSetValueMatrix(dfa, m - 1, 0, &n, sizeof(size_t));
 #ifdef DEBUG
@@ -1182,7 +1186,7 @@ static int _cbfcmpSize_t(const void * px, const void * py)
 	y = *(size_t *)py;
 	x &= (~SIGN);
 	y &= (~SIGN);
-	return _grpCBFCompareInteger(&x, &y);
+	return svCBFCompareSizeTInteger(&x, &y);
 }
 
 /* Function name: NextState
@@ -1195,10 +1199,10 @@ static int _cbfcmpSize_t(const void * px, const void * py)
  */
 size_t NextState(P_DFA dfa, size_t s, wchar_t a)
 {
-	if (NULL != dfa && s > 0 && s < dfa->ln)
+	if (s > 0 && s < dfa->ln)
 	{
 		size_t i = a;
-		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata, dfa->col, sizeof(size_t), _grpCBFCompareInteger);
+		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata, dfa->col, sizeof(size_t), svCBFCompareSizeTInteger);
 		if (NULL != r)
 			return *(size_t *)strGetValueMatrix(NULL, dfa, s, (size_t)(r - (size_t *)dfa->arrz.pdata), sizeof(size_t));
 	}
@@ -1215,11 +1219,11 @@ size_t NextState(P_DFA dfa, size_t s, wchar_t a)
  */
 size_t NextStateM(P_DFA dfa, size_t s, wchar_t a)
 {
-	if (NULL != dfa && s > 0 && s < dfa->ln)
+	if (s > 0 && s < dfa->ln)
 	{
 		size_t i = a;
 		/* First, we locate to the column of the DFA. */
-		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata, dfa->col, sizeof(size_t), _grpCBFCompareInteger);
+		size_t * r = (size_t *)svBinarySearch(&i, (size_t *)dfa->arrz.pdata, dfa->col, sizeof(size_t), svCBFCompareSizeTInteger);
 		if (NULL != r)
 		{
 			size_t k = (size_t)(r - (size_t *)dfa->arrz.pdata), * l;
@@ -1261,7 +1265,10 @@ P_DFA CompileRegex2DFA(wchar_t * pwc)
 
 		parrfollowpos = CreateFollowPosArray(pnode, i);
 #ifdef DEBUG
-		strTraverseArrayZ(parrfollowpos, sizeof(P_SET_T), cbftvsPrintFollowposArray, (size_t)&j, false);
+		{
+			size_t j = 0;
+			strTraverseArrayZ(parrfollowpos, sizeof(P_SET_T), cbftvsPrintFollowposArray, (size_t)&j, false);
+		}
 #endif
 
 		parrlvfndtbl = ConstructLeafNodeTable(pnode, i);
@@ -1309,7 +1316,7 @@ static int cbftvsPickRep(void * pitem, size_t param)
  */
 static int cbftvsDestroyPsetPI(void * pitem, size_t param)
 {
-	DWC4100(param);
+	DISUSE(param);
 	setDeleteT(((P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata)->pset);
 	return CBF_CONTINUE;
 }
@@ -1357,7 +1364,7 @@ static int cbftvsSplitSetGroup(void * pitem, size_t param)
 		printf(" }\n");
 #endif
 
-		if (!setIsMemberT(psg->pset, &j, _grpCBFCompareInteger))
+		if (!setIsMemberT(psg->pset, &j, svCBFCompareSizeTInteger))
 		{	/* Split. */
 			if (1 != k)
 			{
@@ -1367,12 +1374,12 @@ static int cbftvsSplitSetGroup(void * pitem, size_t param)
 				sg.rep = k;
 
 				/* Alter psg->egs. */
-				if (setIsMemberT(psetEND, &k, _grpCBFCompareInteger))
+				if (setIsMemberT(psetEND, &k, svCBFCompareSizeTInteger))
 					sg.egs = EGS_END;
 				else
 					sg.egs = EGS_NORMAL;
 
-				setRemoveT(psg->pset, &k, sizeof(size_t), _grpCBFCompareInteger);
+				setRemoveT(psg->pset, &k, sizeof(size_t), svCBFCompareSizeTInteger);
 
 #ifdef DEBUG
 				printf("R:{ ");
@@ -1380,9 +1387,9 @@ static int cbftvsSplitSetGroup(void * pitem, size_t param)
 				printf(" }\n");
 #endif
 
-				setInsertT(sg.pset, &k, sizeof(size_t), _grpCBFCompareInteger);
+				setInsertT(sg.pset, &k, sizeof(size_t), svCBFCompareSizeTInteger);
 
-				setInsertT(psetPI, &sg, sizeof(STATEGROUP), _grpCBFCompareInteger);
+				setInsertT(psetPI, &sg, sizeof(STATEGROUP), svCBFCompareSizeTInteger);
 
 				/* Alter psg->rep. */
 				if (psg->rep == k)
@@ -1464,7 +1471,7 @@ static int cbftvsFillStates(void * pitem, size_t param)
 static int cbftvsFillImageArray(void * pitem, size_t param)
 {
 	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
-	if (setIsMemberT(psg->pset, &0[(size_t *)param], _grpCBFCompareInteger))
+	if (setIsMemberT(psg->pset, &0[(size_t *)param], svCBFCompareSizeTInteger))
 	{
 		1[(size_t *)param] = psg->rep;
 		return CBF_TERMINATE;
@@ -1483,7 +1490,7 @@ static int cbftvsFillImageArray(void * pitem, size_t param)
 static int cbftvsPrintPsetPI(void * pitem, size_t param)
 {
 	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
-	DWC4100(param);
+	DISUSE(param);
 	printf("PI: bsplit:%d. egs:%d. rep:%zd. { ", psg->bsplit, psg->egs, psg->rep);
 	setTraverseT(psg->pset, cbftvsPrintSet, 0, ETM_INORDER);
 	printf(" }\n");
@@ -1520,21 +1527,21 @@ P_DFA MinimizeDFA(P_DFA dfa)
 		if (SIGN & j)
 		{	/* End state. */
 			j &= (~SIGN);
-			setInsertT(sgf.pset, &j, sizeof(size_t), _grpCBFCompareInteger);
+			setInsertT(sgf.pset, &j, sizeof(size_t), svCBFCompareSizeTInteger);
 			if (0 == sgf.rep)
 				sgf.rep = j;
-			setInsertT(psetEND, &j, sizeof(size_t), _grpCBFCompareInteger);
+			setInsertT(psetEND, &j, sizeof(size_t), svCBFCompareSizeTInteger);
 		}
 		else /* Normal state. */
 		{
-			setInsertT(sgs.pset, &j, sizeof(size_t), _grpCBFCompareInteger);
+			setInsertT(sgs.pset, &j, sizeof(size_t), svCBFCompareSizeTInteger);
 			if (0 == sgs.rep)
 				sgs.rep = j;
 		}
 	}
 
-	setInsertT(psetPI, &sgs, sizeof(STATEGROUP), _grpCBFCompareInteger);
-	setInsertT(psetPI, &sgf, sizeof(STATEGROUP), _grpCBFCompareInteger);
+	setInsertT(psetPI, &sgs, sizeof(STATEGROUP), svCBFCompareSizeTInteger);
+	setInsertT(psetPI, &sgf, sizeof(STATEGROUP), svCBFCompareSizeTInteger);
 
 #ifdef DEBUG
 	setTraverseT(psetPI, cbftvsPrintPsetPI, 0, ETM_INORDER);
@@ -1604,7 +1611,7 @@ P_DFA MinimizeDFA(P_DFA dfa)
 		{
 			size_t l;
 			strGetValueMatrix(&l, dfa, k, j, sizeof(size_t));
-			strSetValueMatrix(dfar, i, j, ((size_t *)strBinarySearchArrayZ(parr, &l, sizeof(size_t) * 2, _grpCBFCompareInteger) + 1), sizeof(size_t));
+			strSetValueMatrix(dfar, i, j, ((size_t *)strBinarySearchArrayZ(parr, &l, sizeof(size_t) * 2, svCBFCompareSizeTInteger) + 1), sizeof(size_t));
 		}
 	}
 
