@@ -2,7 +2,7 @@
   * Name:        svregex.c
   * Description: SV Regular Expression module.
   * Author:      cosh.cage#hotmail.com
-  * File ID:     1022231324A0806262208L01637
+  * File ID:     1022231324A1109260820L01662
   * License:     GPLv2.
   */
 #include <stdio.h>
@@ -183,6 +183,7 @@ static LEXICON Splitter(wchar_t ** pwc, bool * pbt)
 	return lex;
 }
 
+#ifdef DEBUG
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: cbftvsPrintSet
  * Description:   Print size_t element set.
@@ -194,10 +195,12 @@ static LEXICON Splitter(wchar_t ** pwc, bool * pbt)
 static int cbftvsPrintSet(void * pitem, size_t param)
 {
 	DISUSE(param);
-	printf("%zd, ", *(size_t *)(P2P_TNODE_BY(pitem)->pdata));
+	printf("%zu, ", *(size_t *)(P2P_TNODE_BY(pitem)->pdata));
 	return CBF_CONTINUE;
 }
+#endif
 
+#ifdef DEBUG
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: PrintLexicon
  * Description:   Print LEXICON structure.
@@ -245,7 +248,9 @@ static void PrintLexicon(LEXICON lex)
 	setTraverseT(q, cbftvsPrintSet, 0, ETM_INORDER);
 	wprintf(L"}\n");
 }
+#endif
 
+#ifdef DEBUG
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: PrintSyntaxTree
  * Description:   Print the syntax tree of a regular expression.
@@ -273,6 +278,7 @@ static void PrintSyntaxTree(P_TNODE_BY pnode, size_t space)
 	PrintLexicon(*(P_LEXICON)((P_TNODE_BY)pnode)->pdata);
 	PrintSyntaxTree(pnode->ppnode[LEFT], space);
 }
+#endif
 
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: cbftvsComputeNullableAndPos
@@ -738,6 +744,7 @@ static P_ARRAY_Z CreateFollowPosArray(P_TNODE_BY pnode, size_t inodes)
 	return parr;
 }
 
+#ifdef DEBUG
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: cbftvsPrintFollowposArray
  * Description:   Print followpos array.
@@ -749,11 +756,12 @@ static P_ARRAY_Z CreateFollowPosArray(P_TNODE_BY pnode, size_t inodes)
 static int cbftvsPrintFollowposArray(void * pitem, size_t param)
 {
 	P_SET_T pset = *(P_SET_T *)pitem;
-	printf("%zd\t{", ++0[(size_t *)param]);
+	printf("%zu\t{", ++0[(size_t *)param]);
 	setTraverseT(pset, cbftvsPrintSet, 0, ETM_INORDER);
 	printf("}\n");
 	return CBF_CONTINUE;
 }
+#endif
 
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: cbftvsPrintFollowposArray
@@ -837,6 +845,7 @@ static P_ARRAY_Z ConstructLeafNodeTable(P_TNODE_BY pnode, size_t inodes)
 	return NULL;
 }
 
+#ifdef DEBUG
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: cbftvsPrintLeafNodeTable
  * Description:   Print the leaf node table.
@@ -849,10 +858,11 @@ static int cbftvsPrintLeafNodeTable(void * pitem, size_t param)
 {
 	DISUSE(param);
 
-	wprintf(L"%c\t%ld\n", ((P_LVFNDTBL)pitem)->wch, ((P_LVFNDTBL)pitem)->i);
+	wprintf(L"%c\t%zu\n", ((P_LVFNDTBL)pitem)->wch, ((P_LVFNDTBL)pitem)->i);
 
 	return CBF_CONTINUE;
 }
+#endif
 
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: cbfcmpWChar_t
@@ -994,6 +1004,7 @@ static void DestroyDstates(P_SET_T pds)
 	setDeleteT(pds);
 }
 
+#ifdef DEBUG
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: cbftvsPrintDstates
  * Description:   Print set Dstates.
@@ -1015,7 +1026,9 @@ static int cbftvsPrintDstates(void * pitem, size_t param)
 	}
 	return CBF_CONTINUE;
 }
+#endif
 
+#ifdef DEBUG
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: PrintDstates
  * Description:   Print set Dstates.
@@ -1029,6 +1042,7 @@ static void PrintDstates(P_SET_T pset)
 	setTraverseT(pset, cbftvsPrintDstates, 0, ETM_INORDER);
 	printf(" }\n");
 }
+#endif
 
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: ConstructDFA
@@ -1055,8 +1069,15 @@ static P_MATRIX ConstructDFA(P_ARRAY_Z parflps, P_ARRAY_Z parlvfndtbl, P_TNODE_B
 		pset = setCreateT();
 
 		strTraverseArrayZ(parlvfndtbl, sizeof(LVFNDTBL), cbftvsCompressInputSymbols, (size_t)pset, false);
-
-		dfa = strCreateMatrix(2, treArityBY(P2P_TNODE_BY(*pset)) + 1, sizeof(size_t));
+		
+		n = treArityBY(P2P_TNODE_BY(*pset));
+		if (0 == n) /* No symbol at all. */
+		{
+			setDeleteT(pset);
+			return NULL;
+		}
+		
+		dfa = strCreateMatrix(2, n + 1, sizeof(size_t));
 
 		n = 0;
 		strSetMatrix(dfa, &n, sizeof(size_t));
@@ -1253,6 +1274,9 @@ P_DFA CompileRegex2DFA(wchar_t * pwc)
 	P_TNODE_BY pnode;
 	P_DFA dfa = NULL;
 	wchar_t ** ppwc = &pwc;
+	
+	if (L'\0' == *pwc)
+		return NULL;
 
 	pnode = Parse(ppwc, &i);
 	if (NULL != pnode)
@@ -1332,7 +1356,6 @@ static void DestroyPsetPI(P_SET_T pset)
 {
 	setTraverseT(pset, cbftvsDestroyPsetPI, 0, ETM_POSTORDER);
 	setDeleteT(pset);
-	pset = NULL;
 }
 
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
@@ -1479,6 +1502,7 @@ static int cbftvsFillImageArray(void * pitem, size_t param)
 	return CBF_CONTINUE;
 }
 
+#ifdef DEBUG
 /* Attention:     This Is An Internal Function. No Interface for Library Users.
  * Function name: cbftvsPrintPsetPI
  * Description:   Print set PI.
@@ -1491,11 +1515,12 @@ static int cbftvsPrintPsetPI(void * pitem, size_t param)
 {
 	P_STATEGROUP psg = (P_STATEGROUP)P2P_TNODE_BY(pitem)->pdata;
 	DISUSE(param);
-	printf("PI: bsplit:%d. egs:%d. rep:%zd. { ", psg->bsplit, psg->egs, psg->rep);
+	printf("PI: bsplit:%d. egs:%d. rep:%zu. { ", psg->bsplit, psg->egs, psg->rep);
 	setTraverseT(psg->pset, cbftvsPrintSet, 0, ETM_INORDER);
 	printf(" }\n");
 	return CBF_CONTINUE;
 }
+#endif
 
 /* Function name: MinimizeDFA
  * Description:   Minimize a DFA.
